@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container auth-box">
+        <h2>LOGIN</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <input type="email" id="loginEmail" placeholder="ENTER YOUR EMAIL" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="loginPassword" placeholder="ENTER YOUR PASSWORD" required>
+            </div>
+            <button type="submit" class="btn">LOGIN</button>
+        </form>
+        <p id="loginMessage" style="margin-top: 20px; color: red;"></p>
+        <p style="margin-top: 10px;">
+            Don't have an account? <a href="register.html">Register here.</a><br>
+            <a href="admin/staff_login.html" style="font-size: 0.8rem; opacity: 0.7;">Staff Login</a>
+        </p>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

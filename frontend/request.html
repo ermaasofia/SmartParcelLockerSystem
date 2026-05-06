@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Request Locker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <a href="index.html" class="logout-link">LOGOUT</a>
+    
+    <div class="container auth-box" id="request-box">
+        <h2>REQUEST LOCKER</h2>
+        <form id="requestForm">
+            <div class="form-group">
+                <input type="text" id="studentID" placeholder="STUDENT ID :" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="lockerID" placeholder="LOCKER ID :" required>
+            </div>
+            <div class="form-group">
+                <input type="date" id="date" required>
+            </div>
+            <button type="submit" class="btn">REQUEST</button>
+        </form>
+        <p id="request-message" style="margin-top: 20px; color: red;"></p>
+    </div>
+
+    <!-- Success Box (Hidden by default) -->
+    <div class="container auth-box" id="success-box" style="display: none;">
+        <h2>LOCKER ASSIGNED</h2>
+        <p style="margin-bottom: 20px;">Your parcel has been assigned to Locker #<span id="display-locker"></span></p>
+        <p><strong>Your 4-Digit PIN is:</strong></p>
+        <h1 id="display-pin" style="color: #4CAF50; font-size: 4rem; letter-spacing: 5px; margin: 20px 0;">0000</h1>
+        <p style="font-size: 0.8rem; color: #aaa;">This PIN is valid for 72 hours.</p>
+        <a href="index.html" class="btn">DONE</a>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

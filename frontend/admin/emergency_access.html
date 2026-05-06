@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Emergency Access</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>MENU</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="request_mgmt.html">MANAGE REQUEST</a></li>
+                <li><a href="parcel_mgmt.html">MANAGE PARCEL</a></li>
+                <li><a href="storage_monitor.html">MONITOR PARCEL</a></li>
+                <li class="active"><a href="emergency_access.html">EMERGENCY ACCESS</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-content">
+            <header class="admin-header">
+                <h1>PICK N GO</h1>
+                <div class="admin-links">
+                    <a href="#">PROFILE</a>
+                    <a href="#">ADMIN</a>
+                    <a href="../index.html">LOGOUT</a>
+                </div>
+            </header>
+
+            <section style="max-width: 600px; margin: 0 auto;">
+                <h2 style="font-size: 3rem; margin-bottom: 40px;">EMERGENCY ACCESS</h2>
+                
+                <div class="form-group">
+                    <label>LOCKER ID :</label>
+                    <input type="text" id="emergencyLockerId">
+                </div>
+                <div class="form-group">
+                    <label>STUDENT ID :</label>
+                    <input type="text" id="emergencyStudentId">
+                </div>
+                <div class="form-group">
+                    <label>PARCEL ID :</label>
+                    <input type="text" id="emergencyParcelId">
+                </div>
+                <div class="form-group">
+                    <label>DATE :</label>
+                    <input type="date" id="emergencyDate">
+                </div>
+                <div class="form-group">
+                    <label>TIME :</label>
+                    <input type="time" id="emergencyTime">
+                </div>
+                <div class="form-group">
+                    <label>REASON :</label>
+                    <input type="text" id="emergencyReason">
+                </div>
+
+                <div style="display: flex; gap: 20px;">
+                    <button class="btn" onclick="emergencyOpen()">OPEN</button>
+                    <button class="btn btn-secondary" onclick="window.history.back()">BACK</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="admin_app.js"></script>
+</body>
+</html>

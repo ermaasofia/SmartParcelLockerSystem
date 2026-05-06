@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Register</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container auth-box">
+        <h2>REGISTER</h2>
+        <form id="registerForm">
+            <div class="form-group">
+                <input type="text" id="regName" placeholder="USERNAME" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="regStudentID" placeholder="STUDENT ID" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="regEmail" placeholder="EMAIL" required>
+            </div>
+            <div class="form-group">
+                <input type="tel" id="regPhone" placeholder="PHONE NUMBER" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="regPassword" placeholder="PASSWORD" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="regConfirmPassword" placeholder="CONFIRM PASSWORD" required>
+            </div>
+            <button type="submit" class="btn">REGISTER</button>
+        </form>
+        <p id="regMessage" style="margin-top: 20px; color: red;"></p>
+        <p style="margin-top: 10px;">
+            Already have an account? <a href="login.html">Login here.</a>
+        </p>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

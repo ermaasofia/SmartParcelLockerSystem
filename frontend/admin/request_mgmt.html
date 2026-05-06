@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Request Management</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2>MENU</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li class="active"><a href="request_mgmt.html">MANAGE REQUEST</a></li>
+                <li><a href="parcel_mgmt.html">MANAGE PARCEL</a></li>
+                <li><a href="storage_monitor.html">MONITOR PARCEL</a></li>
+                <li><a href="emergency_access.html">EMERGENCY ACCESS</a></li>
+            </ul>
+        </nav>
+
+        <main class="admin-content">
+            <header class="admin-header">
+                <h1>PICK N GO</h1>
+                <div class="admin-links">
+                    <a href="#">PROFILE</a>
+                    <a href="#">ADMIN</a>
+                    <a href="../index.html">LOGOUT</a>
+                </div>
+            </header>
+
+            <section>
+                <h2>REQUEST MANAGEMENT</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Locker ID</th>
+                            <th>Parcel ID</th>
+                            <th>Student ID</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestTableBody">
+                        <!-- Loaded dynamically by admin_app.js -->
+                    </tbody>
+                </table>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="btn" style="width: auto; padding: 10px 40px;">SAVE</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="admin_app.js"></script>
+</body>
+</html>

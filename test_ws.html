@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Mock Interface</title>
+</head>
+<body>
+    <h1>ESP32 Hardware Mock</h1>
+    <p>Status: <span id="status">Disconnected</span></p>
+    <ul id="messages"></ul>
+    
+    <button onclick="triggerAlarm()">Simulate Door Left Open (Alarm)</button>
+    
+    <script>
+        var ws = new WebSocket("ws://localhost:8000/ws/esp32/ESP32_MAIN");
+        var statusSpan = document.getElementById("status");
+        
+        ws.onopen = function() {
+            statusSpan.innerText = "Connected as ESP32_MAIN";
+            statusSpan.style.color = "green";
+        };
+        
+        ws.onmessage = function(event) {
+            var messages = document.getElementById('messages');
+            var message = document.createElement('li');
+            var content = document.createTextNode(event.data);
+            message.appendChild(content);
+            messages.appendChild(message);
+            
+            // Check command
+            var data = JSON.parse(event.data);
+            if(data.action === "OPEN") {
+                alert("KLICK! Solenoid " + data.locker_id + " triggered.");
+            }
+        };
+        
+        ws.onclose = function() {
+            statusSpan.innerText = "Disconnected";
+            statusSpan.style.color = "red";
+        };
+        
+        function triggerAlarm() {
+            ws.send(JSON.stringify({action: "ALARM_TRIGGERED", locker_id: 1}));
+            alert("Alarm sent to server");
+        }
+    </script>
+</body>
+</html>
