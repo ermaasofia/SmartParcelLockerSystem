@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Dashboard</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .locker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .locker-card {
+            background: #222;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid #333;
+            transition: transform 0.2s;
+        }
+        .locker-card:hover {
+            transform: translateY(-5px);
+        }
+        .locker-card.available { border-color: #4CAF50; }
+        .locker-card.occupied { border-color: #2196F3; }
+        .locker-card.alarm { border-color: #f44336; animation: blink 1s infinite; }
+        
+        @keyframes blink {
+            50% { opacity: 0.5; }
+        }
+        
+        .locker-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .locker-info h3 { margin: 10px 0; font-size: 1.2rem; }
+        .locker-info p { color: #aaa; font-size: 0.9rem; }
+    </style>
+</head>
+<body class="admin-page">
+    <div class="admin-wrapper">
+        <nav class="sidebar">
+            <!-- Sidebar content loaded dynamically by admin_app.js -->
+        </nav>
+
+        <main class="admin-content">
+            <header class="admin-header">
+                <h1>PICK N GO</h1>
+                <div class="admin-links">
+                    <!-- Loaded by admin_app.js -->
+                </div>
+            </header>
+
+            <section>
+                <h2>LOCKER OVERVIEW</h2>
+                <div class="locker-grid" id="lockerGrid">
+                    <!-- Loaded by admin_app.js -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="admin_app.js?v=2"></script>
+</body>
+</html>

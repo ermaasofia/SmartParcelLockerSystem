@@ -237,7 +237,23 @@ def list_requests(db: Session = Depends(get_db)):
 
 @app.get("/admin/parcels")
 def list_parcels(db: Session = Depends(get_db)):
-    return db.query(models.Parcel).all()
+    # Join Parcel and Request to get studentID
+    results = db.query(models.Parcel, models.Request.studentID)\
+                .outerjoin(models.Request, models.Parcel.parcelID == models.Request.parcelID)\
+                .all()
+    
+    response = []
+    for parcel, student_id in results:
+        p_dict = {
+            "parcelID": parcel.parcelID,
+            "lockerID": parcel.lockerID,
+            "parcelPIN": parcel.parcelPIN,
+            "hasPenalty": parcel.hasPenalty,
+            "storageTime": parcel.storageTime.isoformat() if parcel.storageTime else None,
+            "studentID": student_id or "Unknown"
+        }
+        response.append(p_dict)
+    return response
 
 @app.get("/admin/lockers")
 def list_lockers(db: Session = Depends(get_db)):
@@ -248,7 +264,19 @@ def update_parcel_status(parcelID: int, status_update: dict, db: Session = Depen
     request = db.query(models.Request).filter(models.Request.parcelID == parcelID).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request/Parcel not found")
-    request.requestStatus = status_update.get("status")
+    
+    new_status = status_update.get("status")
+    request.requestStatus = new_status
+    
+    # If the parcel is collected/removed, free up the locker
+    if new_status in ["Collected", "Removed", "Clear"]:
+        parcel = db.query(models.Parcel).filter(models.Parcel.parcelID == parcelID).first()
+        if parcel:
+            locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
+            if locker:
+                locker.lockerStatus = "Available"
+                locker.parcelID = None
+    
     db.commit()
     return {"message": "Status updated"}
 

@@ -1,23 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pick N Go - Storage Monitoring</title>
     <link rel="stylesheet" href="../styles.css">
 </head>
+
 <body>
     <div class="admin-wrapper">
         <nav class="sidebar">
-            <div class="sidebar-header">
-                <h2>MENU</h2>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="request_mgmt.html">MANAGE REQUEST</a></li>
-                <li><a href="parcel_mgmt.html">MANAGE PARCEL</a></li>
-                <li class="active"><a href="storage_monitor.html">MONITOR PARCEL</a></li>
-                <li><a href="emergency_access.html">EMERGENCY ACCESS</a></li>
-            </ul>
+            <!-- Sidebar content loaded dynamically by admin_app.js -->
         </nav>
 
         <main class="admin-content">
@@ -32,7 +26,7 @@
 
             <section>
                 <h2>STORAGE MONITORING</h2>
-                
+
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -48,34 +42,14 @@
                         </tr>
                     </thead>
                     <tbody id="monitorTableBody">
-                        <tr>
-                            <td>L1</td>
-                            <td>P1</td>
-                            <td>S1</td>
-                            <td>23/2/2026</td>
-                            <td>12:00 AM</td>
-                            <td>3</td>
-                            <td><span class="status-tag status-stored">Complete</span></td>
-                            <td>-</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>L2</td>
-                            <td>P2</td>
-                            <td>S2</td>
-                            <td>20/2/2026</td>
-                            <td>10.30 AM</td>
-                            <td>4</td>
-                            <td><span class="status-tag status-overdue">Overdue</span></td>
-                            <td>Penalty</td>
-                            <td><a href="#" style="font-size: 0.7rem;" onclick="sendNotification('S2')">send notification 📩</a></td>
-                        </tr>
+
                     </tbody>
                 </table>
             </section>
         </main>
     </div>
 
-    <script src="admin_app.js"></script>
+    <script src="admin_app.js?v=2"></script>
 </body>
+
 </html>

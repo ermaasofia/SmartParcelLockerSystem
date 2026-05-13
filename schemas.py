@@ -47,6 +47,7 @@ class ParcelCreate(ParcelBase):
 class ParcelResponse(ParcelBase):
     parcelID: int
     storageTime: datetime
+    studentID: Optional[str] = None
     class Config:
         from_attributes = True
 

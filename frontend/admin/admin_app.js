@@ -13,10 +13,14 @@ function hideAddModal() {
 
 // Emergency Open (Fig 27)
 async function emergencyOpen() {
+    console.log("[admin_app.js] emergencyOpen() triggered.");
     const lockerId = document.getElementById('emergencyLockerId').value;
     const reason = document.getElementById('emergencyReason').value;
 
-    if(!lockerId) return alert("Please enter a Locker ID");
+    if(!lockerId) {
+        console.warn("[admin_app.js] emergencyOpen() aborted: No Locker ID provided.");
+        return alert("Please enter a Locker ID");
+    }
 
     try {
         const response = await fetch(`${API_BASE}/admin/override/${lockerId}`, {
@@ -38,12 +42,14 @@ async function emergencyOpen() {
 
 // Save Manual Parcel (Fig 25)
 async function saveParcel() {
+    console.log("[admin_app.js] saveParcel() triggered.");
     const data = {
         lockerID: parseInt(document.getElementById('modalLockerId').value),
         studentID: document.getElementById('modalStudentId').value,
         parcelPIN: Math.floor(1000 + Math.random() * 9000).toString(),
         hasPenalty: false
     };
+    console.log("[admin_app.js] Sending Parcel data:", data);
 
     try {
         const response = await fetch(`${API_BASE}/parcels/`, {
@@ -66,14 +72,19 @@ async function saveParcel() {
 
 // Send Notification (Fig 26)
 function sendNotification(studentId) {
+    console.log(`[admin_app.js] sendNotification() triggered for student: ${studentId}`);
     alert(`Notification sent to Student ${studentId}: Your parcel is OVERDUE! Please collect it immediately.`);
 }
 
 // --- Data Loading Logic ---
 
 async function loadRequestTable() {
+    console.log("[admin_app.js] loadRequestTable() triggered.");
     const tbody = document.getElementById('requestTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.log("[admin_app.js] requestTableBody not found. Skipping.");
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE}/admin/requests`);
@@ -97,8 +108,12 @@ async function loadRequestTable() {
 }
 
 async function loadParcelTable() {
+    console.log("[admin_app.js] loadParcelTable() triggered.");
     const tbody = document.getElementById('parcelTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.log("[admin_app.js] parcelTableBody not found. Skipping.");
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE}/admin/parcels`);
@@ -108,9 +123,11 @@ async function loadParcelTable() {
             <tr>
                 <td>L${p.lockerID}</td>
                 <td>P${p.parcelID}</td>
-                <td>PIN: ${p.parcelPIN}</td>
+                <td>S${p.studentID}</td>
                 <td><span class="status-tag status-active">Active</span></td>
-                <td>${p.hasPenalty ? 'Penalty' : 'None'}</td>
+                <td>
+                    <button onclick="updateStatus(${p.parcelID}, 'Clear')" style="cursor:pointer; background:#f44336; color:white; border:none; padding:5px 10px; border-radius:3px;">Clear</button>
+                </td>
             </tr>
         `).join('') || '<tr><td colspan="5">No parcels found</td></tr>';
     } catch (err) {
@@ -119,8 +136,12 @@ async function loadParcelTable() {
 }
 
 async function loadMonitorTable() {
+    console.log("[admin_app.js] loadMonitorTable() triggered.");
     const tbody = document.getElementById('monitorTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.log("[admin_app.js] monitorTableBody not found. Skipping.");
+        return;
+    }
 
     try {
         const response = await fetch(`${API_BASE}/admin/parcels`);
@@ -136,14 +157,14 @@ async function loadMonitorTable() {
                 <tr>
                     <td>L${p.lockerID}</td>
                     <td>P${p.parcelID}</td>
-                    <td>-</td>
+                    <td>S${p.studentID}</td>
                     <td>${entryDate.toLocaleDateString()}</td>
                     <td>${entryDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
                     <td>${diffDays}</td>
                     <td><span class="status-tag status-active">Active</span></td>
                     <td>${p.hasPenalty ? 'Penalty Applied' : '-'}</td>
                     <td>
-                        <button onclick="sendNotification('0000')">Notify</button>
+                        <button onclick="sendNotification('${p.studentID}')" style="cursor:pointer; background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:3px;">Notify</button>
                     </td>
                 </tr>
             `;
@@ -154,8 +175,13 @@ async function loadMonitorTable() {
 }
 
 async function updateStatus(parcelId, newStatus) {
-    if(!parcelId) return alert("No Parcel ID associated with this request.");
+    console.log(`[admin_app.js] updateStatus() triggered for parcelId: ${parcelId}, newStatus: ${newStatus}`);
+    if(!parcelId) {
+        console.warn("[admin_app.js] updateStatus() aborted: No Parcel ID.");
+        return alert("No Parcel ID associated with this request.");
+    }
     try {
+        console.log(`[admin_app.js] Sending PUT request to ${API_BASE}/admin/parcels/${parcelId}/status`);
         const response = await fetch(`${API_BASE}/admin/parcels/${parcelId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -197,10 +223,82 @@ function adminLogout() {
 
 // Initial Data Load
 async function loadAdminData() {
+    console.log("[admin_app.js] loadAdminData() started.");
+    loadSidebar();
     displayAdminProfile();
     loadRequestTable();
     loadParcelTable();
     loadMonitorTable();
+    if(document.getElementById('lockerGrid')) {
+        loadLockerDashboard();
+    }
+}
+
+async function loadLockerDashboard() {
+    console.log("[admin_app.js] loadLockerDashboard() triggered.");
+    const grid = document.getElementById('lockerGrid');
+    if (!grid) {
+        console.log("[admin_app.js] lockerGrid not found. Skipping.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/admin/lockers`);
+        const lockers = await response.json();
+        
+        grid.innerHTML = lockers.map(l => {
+            let icon = "📦";
+            if (l.lockerStatus === "Available") icon = "🟢";
+            if (l.lockerStatus === "Alarm") icon = "🚨";
+            
+            return `
+                <div class="locker-card ${l.lockerStatus.toLowerCase()}">
+                    <div class="locker-icon">${icon}</div>
+                    <div class="locker-info">
+                        <h3>Locker ${l.lockerID}</h3>
+                        <p>Status: ${l.lockerStatus}</p>
+                        ${l.parcelID ? `<p>Parcel ID: P${l.parcelID}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('') || '<p>No lockers found.</p>';
+    } catch (err) {
+        console.error("Failed to load locker dashboard:", err);
+    }
+}
+
+function loadSidebar() {
+    console.log("[admin_app.js] loadSidebar() triggered.");
+    const sidebar = document.querySelector('.sidebar');
+    if (!sidebar) {
+        console.log("[admin_app.js] .sidebar not found. Skipping.");
+        return;
+    }
+
+    const path = window.location.pathname;
+    const page = path.split('/').pop() || 'dashboard.html';
+
+    const navItems = [
+        { href: 'dashboard.html', label: 'DASHBOARD' },
+        { href: 'request_mgmt.html', label: 'MANAGE REQUEST' },
+        { href: 'parcel_mgmt.html', label: 'MANAGE PARCEL' },
+        { href: 'storage_monitor.html', label: 'MONITOR PARCEL' },
+        { href: 'emergency_access.html', label: 'EMERGENCY ACCESS' }
+    ];
+
+    const menuHtml = navItems.map(item => {
+        const isActive = page === item.href ? 'class="active"' : '';
+        return `<li ${isActive}><a href="${item.href}">${item.label}</a></li>`;
+    }).join('');
+
+    sidebar.innerHTML = `
+        <div class="sidebar-header">
+            <h2>MENU</h2>
+        </div>
+        <ul class="sidebar-menu">
+            ${menuHtml}
+        </ul>
+    `;
 }
 
 window.onload = loadAdminData;
