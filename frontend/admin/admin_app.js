@@ -71,9 +71,9 @@ async function saveParcel() {
 }
 
 // Send Notification (Fig 26)
-function sendNotification(studentId) {
-    console.log(`[admin_app.js] sendNotification() triggered for student: ${studentId}`);
-    alert(`Notification sent to Student ${studentId}: Your parcel is OVERDUE! Please collect it immediately.`);
+function sendNotification(contactNumber) {
+    console.log(`[admin_app.js] sendNotification() triggered for contact: ${contactNumber}`);
+    alert(`Notification sent to ${contactNumber}: Your parcel is OVERDUE! Please collect it immediately.`);
 }
 
 // --- Data Loading Logic ---
@@ -90,18 +90,39 @@ async function loadRequestTable() {
         const response = await fetch(`${API_BASE}/admin/requests`);
         const requests = await response.json();
         
-        tbody.innerHTML = requests.map(r => `
-            <tr>
-                <td>P${r.parcelID || '-'}</td>
-                <td>R${r.requestID}</td>
-                <td>S${r.studentID}</td>
-                <td>${new Date(r.timestamp).toLocaleDateString()}</td>
-                <td><span class="status-tag status-pending">${r.requestStatus}</span></td>
-                <td>
-                    <button onclick="updateStatus(${r.parcelID}, 'Stored')" style="cursor:pointer">Approve</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="6">No pending requests</td></tr>';
+        tbody.innerHTML = requests.map(r => {
+            const status = r.requestStatus;
+            let actionButtons = "";
+
+            if (status === 'Available' || status === 'Pending') {
+                actionButtons = `
+                    <button onclick="approveRequest('${r.requestID}', 'Stored')" style="cursor:pointer; background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:3px; margin-right:5px;">Approve</button>
+                    <button onclick="approveRequest('${r.requestID}', 'Rejected')" style="cursor:pointer; background:#f44336; color:white; border:none; padding:5px 10px; border-radius:3px;">Reject</button>
+                `;
+            } else if (status === 'Stored') {
+                actionButtons = `
+                    <button onclick="approveRequest('${r.requestID}', 'Rejected')" style="cursor:pointer; background:#f44336; color:white; border:none; padding:5px 10px; border-radius:3px;">Reject</button>
+                `;
+            } else {
+                actionButtons = `<span style="color:#888;">—</span>`;
+            }
+
+            const displayStatus = (status === 'Pending') ? 'Available' : status;
+            const statusColor = displayStatus === 'Available' ? '#FFC107' : displayStatus === 'Stored' ? '#4CAF50' : '#f44336';
+            const parcelRef = r.requestedParcelRef || (r.parcelID ? `P${r.parcelID}` : '-');
+
+            return `
+                <tr>
+                    <td>R${r.requestID}</td>
+                    <td>S${r.studentID}</td>
+                    <td>${parcelRef}</td>
+                    <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+                    <td><span style="padding: 4px 8px; border-radius: 4px; color: white; background: ${statusColor}">${displayStatus}</span></td>
+                    <td>${actionButtons}</td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="6">No pending requests</td></tr>';
+
     } catch (err) {
         console.error("Failed to load requests:", err);
     }
@@ -119,17 +140,28 @@ async function loadParcelTable() {
         const response = await fetch(`${API_BASE}/admin/parcels`);
         const parcels = await response.json();
         
-        tbody.innerHTML = parcels.map(p => `
-            <tr>
-                <td>L${p.lockerID}</td>
-                <td>P${p.parcelID}</td>
-                <td>S${p.studentID}</td>
-                <td><span class="status-tag status-active">Active</span></td>
-                <td>
-                    <button onclick="updateStatus(${p.parcelID}, 'Clear')" style="cursor:pointer; background:#f44336; color:white; border:none; padding:5px 10px; border-radius:3px;">Clear</button>
-                </td>
-            </tr>
-        `).join('') || '<tr><td colspan="5">No parcels found</td></tr>';
+        tbody.innerHTML = parcels.map(p => {
+            const entryDate = p.storageTime ? new Date(p.storageTime) : null;
+            const now = new Date();
+            const diffHours = entryDate ? Math.floor(Math.abs(now - entryDate) / (1000 * 60 * 60)) : 0;
+            const isOverdue = diffHours >= 72;
+            const statusLabel = isOverdue ? 'Overdue' : 'Complete';
+            const dateDisplay = entryDate ? entryDate.toLocaleDateString() : '-';
+            
+            return `
+                <tr>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${p.requestID || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">S${p.studentID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">P${p.parcelID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">L${p.lockerID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${dateDisplay}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${statusLabel}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">
+                        <button onclick="sendNotification('${p.phoneNo && p.phoneNo !== "Unknown" ? p.phoneNo : p.studentID}')" style="cursor:pointer; background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:3px;">Notify</button>
+                    </td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="7" style="padding: 10px; text-align: center;">No parcels found</td></tr>';
     } catch (err) {
         console.error("Failed to load parcels:", err);
     }
@@ -164,7 +196,7 @@ async function loadMonitorTable() {
                     <td><span class="status-tag status-active">Active</span></td>
                     <td>${p.hasPenalty ? 'Penalty Applied' : '-'}</td>
                     <td>
-                        <button onclick="sendNotification('${p.studentID}')" style="cursor:pointer; background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:3px;">Notify</button>
+                        <button onclick="sendNotification('${p.phoneNo && p.phoneNo !== "Unknown" ? p.phoneNo : p.studentID}')" style="cursor:pointer; background:#2196F3; color:white; border:none; padding:5px 10px; border-radius:3px;">Notify</button>
                     </td>
                 </tr>
             `;
@@ -174,25 +206,28 @@ async function loadMonitorTable() {
     }
 }
 
-async function updateStatus(parcelId, newStatus) {
-    console.log(`[admin_app.js] updateStatus() triggered for parcelId: ${parcelId}, newStatus: ${newStatus}`);
-    if(!parcelId) {
-        console.warn("[admin_app.js] updateStatus() aborted: No Parcel ID.");
-        return alert("No Parcel ID associated with this request.");
+async function approveRequest(requestId, newStatus) {
+    const rid = parseInt(requestId, 10);
+    console.log(`[admin_app.js] approveRequest() for requestId: ${rid}, newStatus: ${newStatus}`);
+    if (!rid || isNaN(rid)) {
+        return alert("No valid Request ID.");
     }
     try {
-        console.log(`[admin_app.js] Sending PUT request to ${API_BASE}/admin/parcels/${parcelId}/status`);
-        const response = await fetch(`${API_BASE}/admin/parcels/${parcelId}/status`, {
+        const response = await fetch(`${API_BASE}/admin/requests/${rid}/approve`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
         if (response.ok) {
-            alert(`Status updated to ${newStatus}`);
+            alert(`Request ${newStatus === 'Stored' ? 'Approved' : 'Rejected'} successfully!`);
             location.reload();
+        } else {
+            const errData = await response.json();
+            alert(errData.detail || "Error updating request.");
         }
     } catch (err) {
         console.error(err);
+        alert("Network error. Please try again.");
     }
 }
 
@@ -243,25 +278,58 @@ async function loadLockerDashboard() {
     }
 
     try {
-        const response = await fetch(`${API_BASE}/admin/lockers`);
-        const lockers = await response.json();
+        const [lockersRes, parcelsRes] = await Promise.all([
+            fetch(`${API_BASE}/admin/lockers`),
+            fetch(`${API_BASE}/admin/parcels`)
+        ]);
+        const lockers = await lockersRes.json();
+        const parcels = await parcelsRes.json();
         
-        grid.innerHTML = lockers.map(l => {
-            let icon = "📦";
-            if (l.lockerStatus === "Available") icon = "🟢";
-            if (l.lockerStatus === "Alarm") icon = "🚨";
+        grid.style.display = "grid";
+        grid.style.gridTemplateColumns = "repeat(3, 1fr)";
+        grid.style.gap = "20px";
+
+        const fixedLockers = [1, 2, 3];
+        grid.innerHTML = fixedLockers.map(id => {
+            const l = lockers.find(locker => locker.lockerID === id) || { lockerStatus: "Vacant" };
+            let status = l.lockerStatus === "Available" ? "Vacant" : l.lockerStatus;
+            
+            let icon = "🟢";
+            let pInfo = "";
+            let cardColor = "#4CAF50"; // Green for Vacant
+
+            if (status === "Occupied" || status === "Stored") {
+                status = "Stored";
+                icon = "📦";
+                cardColor = "#f44336"; // Red for Stored
+                
+                const p = parcels.find(parcel => parcel.lockerID === id && parcel.parcelID === l.parcelID);
+                if (p && p.storageTime) {
+                    const entryDate = new Date(p.storageTime);
+                    const diffHours = Math.floor(Math.abs(new Date() - entryDate) / (1000 * 60 * 60));
+                    if (diffHours >= 72) {
+                        status = "Overdue";
+                        icon = "⚠️";
+                        cardColor = "#f44336"; // Red for Overdue
+                    }
+                }
+                pInfo = l.parcelID ? `<p style="margin-top: 5px; color: #fff;">Parcel ID: P${l.parcelID}</p>` : '';
+            } else if (status === "Alarm") {
+                icon = "🚨";
+                cardColor = "#f44336";
+            }
             
             return `
-                <div class="locker-card ${l.lockerStatus.toLowerCase()}">
-                    <div class="locker-icon">${icon}</div>
+                <div class="locker-card" style="background: #2a2a2a; border: 2px solid ${cardColor}; padding: 20px; border-radius: 8px; text-align: center; color: white;">
+                    <div class="locker-icon" style="font-size: 3rem; margin-bottom: 15px;">${icon}</div>
                     <div class="locker-info">
-                        <h3>Locker ${l.lockerID}</h3>
-                        <p>Status: ${l.lockerStatus}</p>
-                        ${l.parcelID ? `<p>Parcel ID: P${l.parcelID}</p>` : ''}
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.5rem;">Locker ${id}</h3>
+                        <p style="font-weight: bold; color: ${cardColor}; margin: 0; font-size: 1.2rem;">${status}</p>
+                        ${pInfo}
                     </div>
                 </div>
             `;
-        }).join('') || '<p>No lockers found.</p>';
+        }).join('');
     } catch (err) {
         console.error("Failed to load locker dashboard:", err);
     }
@@ -278,13 +346,18 @@ function loadSidebar() {
     const path = window.location.pathname;
     const page = path.split('/').pop() || 'dashboard.html';
 
+    const adminName = localStorage.getItem('adminName');
+    
     const navItems = [
         { href: 'dashboard.html', label: 'DASHBOARD' },
         { href: 'request_mgmt.html', label: 'MANAGE REQUEST' },
-        { href: 'parcel_mgmt.html', label: 'MANAGE PARCEL' },
-        { href: 'storage_monitor.html', label: 'MONITOR PARCEL' },
-        { href: 'emergency_access.html', label: 'EMERGENCY ACCESS' }
+        { href: 'parcel_mgmt.html', label: 'MANAGE PARCEL' }
     ];
+
+    // Master Role feature
+    if (adminName === 'Administrator') {
+        navItems.push({ href: 'statistics.html', label: 'STATISTICS & RECORDS' });
+    }
 
     const menuHtml = navItems.map(item => {
         const isActive = page === item.href ? 'class="active"' : '';

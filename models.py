@@ -48,6 +48,7 @@ class Request(Base):
     studentID = Column(String, ForeignKey("customers.studentID"))
     adminID = Column(Integer, ForeignKey("admins.adminID"), nullable=True)
     parcelID = Column(Integer, ForeignKey("parcels.parcelID"), nullable=True)
+    requestedParcelRef = Column(String, nullable=True)  # User-submitted parcel reference (no FK)
     requestStatus = Column(String, default="Pending")
     timestamp = Column(DateTime, default=func.now())
     approvedByAdmin = Column(Boolean, default=False)

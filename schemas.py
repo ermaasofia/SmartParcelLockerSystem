@@ -58,7 +58,7 @@ class RequestBase(BaseModel):
     requestStatus: str = "Pending"
 
 class RequestCreate(RequestBase):
-    pass
+    reqDate: Optional[str] = None
 
 class RequestResponse(RequestBase):
     requestID: int

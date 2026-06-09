@@ -18,24 +18,46 @@ def seed_admins():
     from database import SessionLocal
     db = SessionLocal()
     try:
-        # Only seed if no admins exist
-        if db.query(models.Admin).count() == 0:
-            # Admin 1
-            admin_user1 = models.User(name="Admin 1", email="admin1@gmail.com", password="admin1")
-            db.add(admin_user1)
+        # Check if master exists
+        master_user = db.query(models.User).filter(models.User.email == "admin_master@gmail.com").first()
+        if not master_user:
+            admin_master = models.User(name="Administrator", email="admin_master@gmail.com", password="master_password")
+            db.add(admin_master)
             db.commit()
-            db.refresh(admin_user1)
-            db.add(models.Admin(userID=admin_user1.userID))
+            db.refresh(admin_master)
+            db.add(models.Admin(userID=admin_master.userID))
+            db.commit()
+            print("[SEED] Created Administrator (admin_master@gmail.com / master_password)")
             
-            # Admin 2
-            admin_user2 = models.User(name="Admin 2", email="admin2@gmail.com", password="admin2")
-            db.add(admin_user2)
+        # Check and update Admin 1 -> Staff 1
+        staff1 = db.query(models.User).filter(models.User.email == "admin1@gmail.com").first()
+        if staff1:
+            staff1.name = "Staff 1"
+            staff1.email = "staff1@gmail.com"
+            staff1.password = "staff1"
             db.commit()
-            db.refresh(admin_user2)
-            db.add(models.Admin(userID=admin_user2.userID))
+        elif db.query(models.User).filter(models.User.email == "staff1@gmail.com").count() == 0:
+            user1 = models.User(name="Staff 1", email="staff1@gmail.com", password="staff1")
+            db.add(user1)
+            db.commit()
+            db.refresh(user1)
+            db.add(models.Admin(userID=user1.userID))
+            db.commit()
             
+        # Check and update Admin 2 -> Staff 2
+        staff2 = db.query(models.User).filter(models.User.email == "admin2@gmail.com").first()
+        if staff2:
+            staff2.name = "Staff 2"
+            staff2.email = "staff2@gmail.com"
+            staff2.password = "staff2"
             db.commit()
-            print("[SEED] Created Admin 1 (admin1@gmail.com / admin1) and Admin 2 (admin2@gmail.com / admin2)")
+        elif db.query(models.User).filter(models.User.email == "staff2@gmail.com").count() == 0:
+            user2 = models.User(name="Staff 2", email="staff2@gmail.com", password="staff2")
+            db.add(user2)
+            db.commit()
+            db.refresh(user2)
+            db.add(models.Admin(userID=user2.userID))
+            db.commit()
     finally:
         db.close()
 
@@ -135,6 +157,30 @@ def admin_login(data: schemas.UserLogin, db: Session = Depends(get_db)):
 def generate_random_pin():
     return str(random.randint(1000, 9999))
 
+@app.post("/requests/", response_model=schemas.RequestResponse)
+def create_request(req_data: schemas.RequestCreate, db: Session = Depends(get_db)):
+    req_datetime = datetime.utcnow()
+    if req_data.reqDate:
+        try:
+            req_datetime = datetime.strptime(req_data.reqDate, "%Y-%m-%d")
+        except ValueError:
+            pass
+
+    # Store as a status-only request; parcelID FK is left null.
+    # The user-provided parcel reference is kept in requestedParcelRef.
+    db_request = models.Request(
+        studentID=req_data.studentID,
+        parcelID=None,                 # No real parcel row yet
+        requestedParcelRef=str(req_data.parcelID) if req_data.parcelID else None,
+        requestStatus="Available",
+        approvedByAdmin=False,
+        timestamp=req_datetime
+    )
+    db.add(db_request)
+    db.commit()
+    db.refresh(db_request)
+    return db_request
+
 @app.post("/parcels/", response_model=schemas.ParcelResponse)
 def assign_parcel(parcel: schemas.ParcelCreate, db: Session = Depends(get_db)):
     # 1. Ensure Locker exists
@@ -164,8 +210,8 @@ def assign_parcel(parcel: schemas.ParcelCreate, db: Session = Depends(get_db)):
     db_request = models.Request(
         studentID=parcel.studentID,
         parcelID=db_parcel.parcelID,
-        requestStatus="Stored",
-        approvedByAdmin=True
+        requestStatus="Available",
+        approvedByAdmin=False
     )
     db.add(db_request)
     db.commit()
@@ -237,20 +283,23 @@ def list_requests(db: Session = Depends(get_db)):
 
 @app.get("/admin/parcels")
 def list_parcels(db: Session = Depends(get_db)):
-    # Join Parcel and Request to get studentID
-    results = db.query(models.Parcel, models.Request.studentID)\
+    # Join Parcel, Request, and Customer to get studentID and phoneNo
+    results = db.query(models.Parcel, models.Request.studentID, models.Customer.phoneNo, models.Request.requestID)\
                 .outerjoin(models.Request, models.Parcel.parcelID == models.Request.parcelID)\
+                .outerjoin(models.Customer, models.Request.studentID == models.Customer.studentID)\
                 .all()
     
     response = []
-    for parcel, student_id in results:
+    for parcel, student_id, phone_no, request_id in results:
         p_dict = {
             "parcelID": parcel.parcelID,
             "lockerID": parcel.lockerID,
             "parcelPIN": parcel.parcelPIN,
             "hasPenalty": parcel.hasPenalty,
             "storageTime": parcel.storageTime.isoformat() if parcel.storageTime else None,
-            "studentID": student_id or "Unknown"
+            "studentID": student_id or "Unknown",
+            "phoneNo": phone_no or "Unknown",
+            "requestID": request_id or "Unknown"
         }
         response.append(p_dict)
     return response
@@ -259,26 +308,103 @@ def list_parcels(db: Session = Depends(get_db)):
 def list_lockers(db: Session = Depends(get_db)):
     return db.query(models.Locker).all()
 
+def send_email_notification(to_email: str, subject: str, body: str):
+    print("\n" + "="*60)
+    print(f"📧 AUTOMATED EMAIL DISPATCHED")
+    print(f"TO:      {to_email}")
+    print(f"SUBJECT: {subject}")
+    print("-" * 60)
+    print(body)
+    print("="*60 + "\n")
+
+@app.put("/admin/requests/{requestID}/approve")
+def approve_request(requestID: int, status_update: dict, db: Session = Depends(get_db)):
+    """Primary approval endpoint — looks up by requestID (the true PK)."""
+    request = db.query(models.Request).filter(models.Request.requestID == requestID).first()
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    new_status = status_update.get("status")
+
+    # Fetch student email
+    student_user = db.query(models.User).join(models.Customer).filter(
+        models.Customer.studentID == request.studentID
+    ).first()
+    to_email = student_user.email if student_user else f"{request.studentID}@student.edu"
+
+    if new_status == "Stored":
+        # Only assign a locker if one hasn't been assigned yet
+        if not request.parcelID:
+            available_lockers = []
+            for lid in [1, 2, 3]:
+                locker = db.query(models.Locker).filter(models.Locker.lockerID == lid).first()
+                if not locker:
+                    locker = models.Locker(lockerID=lid, lockerStatus="Available")
+                    db.add(locker)
+                    db.commit()
+                    db.refresh(locker)
+                if locker.lockerStatus in ["Available", "Vacant"]:
+                    available_lockers.append(locker)
+
+            if not available_lockers:
+                raise HTTPException(status_code=400, detail="All lockers are currently full")
+
+            assigned_locker = random.choice(available_lockers)
+
+            new_parcel = models.Parcel(
+                lockerID=assigned_locker.lockerID,
+                parcelPIN=generate_random_pin(),
+                hasPenalty=False
+            )
+            db.add(new_parcel)
+            db.commit()
+            db.refresh(new_parcel)
+
+            assigned_locker.lockerStatus = "Occupied"
+            assigned_locker.parcelID = new_parcel.parcelID
+            request.parcelID = new_parcel.parcelID
+            request.approvedByAdmin = True
+
+            body = (
+                f"Hello,\n\nGreat news! Your parcel has been approved and stored.\n"
+                f"Locker Number: {assigned_locker.lockerID}\n"
+                f"Parcel ID: {new_parcel.parcelID}\n"
+                f"Please collect within 72 hours.\n\nSmart Locker Admin"
+            )
+            send_email_notification(to_email, "Your Parcel is Ready for Collection!", body)
+
+    elif new_status == "Rejected":
+        body = (
+            f"Hello,\n\nYour locker request has been declined.\n"
+            f"If this is an error, please contact staff or use the support form.\n\nSmart Locker Admin"
+        )
+        send_email_notification(to_email, "Locker Request Declined", body)
+
+    request.requestStatus = new_status
+    db.commit()
+    return {"message": f"Request {requestID} updated to {new_status}"}
+
+
 @app.put("/admin/parcels/{parcelID}/status")
 def update_parcel_status(parcelID: int, status_update: dict, db: Session = Depends(get_db)):
-    request = db.query(models.Request).filter(models.Request.parcelID == parcelID).first()
-    if not request:
-        raise HTTPException(status_code=404, detail="Request/Parcel not found")
-    
+    """Used for Manage Parcel actions (Clear, Collected, etc.) on existing parcels."""
+    parcel = db.query(models.Parcel).filter(models.Parcel.parcelID == parcelID).first()
+    if not parcel:
+        raise HTTPException(status_code=404, detail="Parcel not found")
+
     new_status = status_update.get("status")
-    request.requestStatus = new_status
-    
-    # If the parcel is collected/removed, free up the locker
-    if new_status in ["Collected", "Removed", "Clear"]:
-        parcel = db.query(models.Parcel).filter(models.Parcel.parcelID == parcelID).first()
-        if parcel:
-            locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
-            if locker:
-                locker.lockerStatus = "Available"
-                locker.parcelID = None
-    
+    request = db.query(models.Request).filter(models.Request.parcelID == parcelID).first()
+    if request:
+        request.requestStatus = new_status
+
+    if new_status in ["Collected", "Removed", "Clear", "Rejected"]:
+        locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
+        if locker:
+            locker.lockerStatus = "Available"
+            locker.parcelID = None
+
     db.commit()
-    return {"message": "Status updated"}
+    return {"message": f"Parcel {parcelID} status updated to {new_status}"}
 
 @app.post("/admin/override/{lockerID}")
 async def admin_override(lockerID: int, db: Session = Depends(get_db)):
@@ -288,6 +414,40 @@ async def admin_override(lockerID: int, db: Session = Depends(get_db)):
     
     await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": lockerID, "mode": "EMERGENCY"})
     return {"status": "Override Successful", "locker_id": lockerID}
+
+@app.get("/admin/statistics")
+def get_statistics(db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    
+    # 1. Most frequently used locker
+    locker_counts = db.query(
+        models.Parcel.lockerID, 
+        func.count(models.Parcel.parcelID).label('usage_count')
+    ).group_by(models.Parcel.lockerID).all()
+    
+    locker_stats = [{"lockerID": lc[0], "count": lc[1]} for lc in locker_counts]
+    
+    # 2. Busiest Peak Days of the Week
+    # We can fetch all timestamps and calculate in python to avoid sqlite specific datetime functions
+    requests = db.query(models.Request.timestamp).all()
+    days_count = {
+        "Monday": 0, "Tuesday": 0, "Wednesday": 0, 
+        "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0
+    }
+    
+    days_map = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    for r in requests:
+        if r.timestamp:
+            day_name = days_map[r.timestamp.weekday()]
+            days_count[day_name] += 1
+            
+    # Format for chart.js
+    peak_days = [{"day": k, "count": v} for k, v in days_count.items()]
+    
+    return {
+        "locker_usage": locker_stats,
+        "peak_days": peak_days
+    }
 
 # Mount frontend
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

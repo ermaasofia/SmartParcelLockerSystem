@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pick N Go - Parcel Management</title>
     <link rel="stylesheet" href="../styles.css">
 </head>
+
 <body>
     <div class="admin-wrapper">
         <nav class="sidebar">
@@ -25,27 +27,24 @@
             <section>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>PARCEL MANAGEMENT</h2>
-                    <button class="btn" style="width: auto; padding: 10px 20px; margin-top: 0;" onclick="showAddModal()">ADD PARCEL</button>
+                    <button class="btn" style="width: auto; padding: 10px 20px; margin-top: 0;"
+                        onclick="showAddModal()">ADD PARCEL</button>
                 </div>
                 
-                <table class="data-table">
+                <table class="data-table" style="width: 100%; border-collapse: collapse; margin-top: 20px; text-align: left;">
                     <thead>
                         <tr>
-                            <th>Locker ID</th>
-                            <th>Parcel ID</th>
-                            <th>Student ID</th>
-                            <th>Status</th>
-                            <th>Action</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Request ID</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Student ID</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Parcel ID</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Locker ID</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Date</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Status</th>
+                            <th style="padding: 10px; border-bottom: 1px solid #444;">Action</th>
                         </tr>
                     </thead>
                     <tbody id="parcelTableBody">
-                        <tr>
-                            <td>L1</td>
-                            <td>P1</td>
-                            <td>S1</td>
-                            <td><span class="status-tag status-pending">pending</span></td>
-                            <td>approve</td>
-                        </tr>
+                        <!-- Loaded dynamically -->
                     </tbody>
                 </table>
             </section>
@@ -85,4 +84,5 @@
 
     <script src="admin_app.js?v=2"></script>
 </body>
+
 </html>

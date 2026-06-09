@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pick N Go - Emergency Form</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <a href="retrieve.html" class="logout-link">BACK</a>
+
+    <div class="container auth-box">
+        <h2>EMERGENCY REPORT</h2>
+        <p>Please submit this form to report your issue with the locker.</p>
+        <form id="emergencyForm">
+
+            <input type="text" id="emName" placeholder="Your Name" required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
+            <input type="text" id="emStudentID" placeholder="Student ID" required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
+
+            <input type="text" id="emLockerID" placeholder="Locker ID" readonly required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
+
+            <input type="date" id="emDate" required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
+            <input type="time" id="emTime" required
+                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
+
+            <textarea id="emIssue" placeholder="Describe the issue" required
+                style="width: 100%; height: 100px; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;"></textarea>
+
+            <button type="submit" class="btn">SUBMIT REPORT</button>
+            <div class="helpline-box"
+                style="background-color: #ffebeb; border-left: 5px solid #ff4d4d; padding: 12px; margin: 15px auto; border-radius: 4px; max-width: 100%; text-align: left;">
+                <p style="margin: 0; color: #d63031; font-weight: bold; font-size: 14px;">⚡ Need Urgent Assistance?</p>
+                <p style="margin: 5px 0 0 0; color: #2d3436; font-size: 13px;">
+                    For immediate response, call or WhatsApp Customer Service at:
+                    <a href="tel:+601169972272"
+                        style="color: #ff4d4d; font-weight: bold; text-decoration: underline;">+60 11-6997 2272</a>
+                </p>
+            </div>
+        </form>
+        <p id="emergencyMessage" style="margin-top: 15px;"></p>
+    </div>
+
+    <script>
+        document.getElementById('emergencyForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('emergencyMessage').innerText = "Emergency report submitted successfully. Support will contact you.";
+            document.getElementById('emergencyMessage').style.color = "green";
+            e.target.reset();
+        });
+    </script>
+</body>
+
+</html>
