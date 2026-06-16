@@ -109,9 +109,9 @@ if (requestForm) {
         e.preventDefault();
 
         const studentId = document.getElementById('studentID').value.trim();
-        const parcelId  = document.getElementById('parcelID').value.trim();
-        const reqDate   = document.getElementById('date').value;
-        const msgEl     = document.getElementById('request-message');
+        const parcelId = document.getElementById('parcelID').value.trim();
+        const reqDate = document.getElementById('date').value;
+        const msgEl = document.getElementById('request-message');
         const submitBtn = requestForm.querySelector('button[type="submit"]');
 
         if (!studentId || !parcelId || !reqDate) {
@@ -165,10 +165,10 @@ if (requestForm) {
 // ─── Retrieve Locker PIN Form ─────────────────────────────────────────────────
 const retrieveForm = document.getElementById('retrieveForm');
 if (retrieveForm) {
-    const msgEl       = document.getElementById('retrieve-message');
+    const msgEl = document.getElementById('retrieve-message');
     const emergencyBtn = document.getElementById('emergency-btn');
-    const submitBtn   = retrieveForm.querySelector('button[type="submit"]');
-    const boxes       = document.querySelectorAll('.pin-box');
+    const submitBtn = retrieveForm.querySelector('button[type="submit"]');
+    const boxes = document.querySelectorAll('.pin-box');
     let failedAttempts = parseInt(sessionStorage.getItem('pinAttempts') || '0');
     let countdownInterval = null;
 
@@ -207,7 +207,7 @@ if (retrieveForm) {
 
     function startCountdown(expiryTime) {
         if (countdownInterval) clearInterval(countdownInterval);
-        
+
         function updateTimer() {
             const timeLeft = Math.max(0, Math.round((expiryTime - Date.now()) / 1000));
             if (timeLeft > 0) {
@@ -218,7 +218,7 @@ if (retrieveForm) {
                 enableForm();
             }
         }
-        
+
         updateTimer();
         countdownInterval = setInterval(updateTimer, 1000);
     }
@@ -254,7 +254,7 @@ if (retrieveForm) {
                 sessionStorage.setItem('pinAttempts', '0');
                 sessionStorage.removeItem('lockoutExpiry');
                 if (emergencyBtn) emergencyBtn.style.display = 'none';
-                
+
                 const retrieveBox = document.getElementById('retrieve-box');
                 const successBox = document.getElementById('success-box');
                 if (retrieveBox && successBox) {
@@ -264,7 +264,7 @@ if (retrieveForm) {
             } else {
                 failedAttempts++;
                 sessionStorage.setItem('pinAttempts', failedAttempts);
-                
+
                 if (failedAttempts === 3) {
                     const expiry = Date.now() + 60000;
                     sessionStorage.setItem('lockoutExpiry', expiry.toString());
@@ -295,13 +295,13 @@ const registerForm = document.getElementById('registerForm');
 if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const name     = document.getElementById('regName').value.trim();
+        const name = document.getElementById('regName').value.trim();
         const studentID = document.getElementById('regStudentID').value.trim();
-        const email    = document.getElementById('regEmail').value.trim();
-        const phone    = document.getElementById('regPhone').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
         const password = document.getElementById('regPassword').value;
-        const confirm  = document.getElementById('regConfirmPassword').value;
-        const msg      = document.getElementById('regMessage');
+        const confirm = document.getElementById('regConfirmPassword').value;
+        const msg = document.getElementById('regMessage');
         const submitBtn = registerForm.querySelector('button[type="submit"]');
 
         if (password !== confirm) {
@@ -343,9 +343,9 @@ const loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email    = document.getElementById('loginEmail').value.trim();
+        const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
-        const msg      = document.getElementById('loginMessage');
+        const msg = document.getElementById('loginMessage');
         const submitBtn = loginForm.querySelector('button[type="submit"]');
 
         submitBtn.disabled = true;

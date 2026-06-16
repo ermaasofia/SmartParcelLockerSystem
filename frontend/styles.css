@@ -7,6 +7,28 @@
     --font-body: 'Arial', sans-serif;
 }
 
+.hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 0 8%;
+
+    background:
+        linear-gradient(90deg,
+            rgba(15, 17, 21, 1) 0%,
+            rgba(15, 17, 21, 0.95) 25%,
+            rgba(15, 17, 21, 0.80) 45%,
+            rgba(15, 17, 21, 0.45) 65%,
+            rgba(15, 17, 21, 0.15) 85%,
+            rgba(15, 17, 21, 0) 100%),
+        url("bgLocker.png");
+
+    background-size: cover;
+    background-position: right center;
+    background-repeat: no-repeat;
+}
+
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -172,6 +194,8 @@ input::placeholder {
     text-decoration: underline;
     font-size: 0.9rem;
     text-transform: uppercase;
+    z-index: 10000;
+    cursor: pointer;
 }
 
 /* Mobile Responsiveness */
@@ -179,11 +203,13 @@ input::placeholder {
     .landing-grid {
         grid-template-columns: 1fr;
     }
+
     .landing-left h1 {
         font-size: 3rem;
         text-align: center;
     }
 }
+
 /* Admin Dashboard Layout */
 .admin-wrapper {
     display: flex;
@@ -220,7 +246,8 @@ input::placeholder {
     transition: background 0.3s;
 }
 
-.sidebar-menu li:hover, .sidebar-menu li.active {
+.sidebar-menu li:hover,
+.sidebar-menu li.active {
     background-color: #dcdcdc;
 }
 
@@ -266,7 +293,8 @@ input::placeholder {
     margin-top: 20px;
 }
 
-.data-table th, .data-table td {
+.data-table th,
+.data-table td {
     border: 1px solid var(--accent-color);
     padding: 12px;
     text-align: center;
@@ -286,10 +314,25 @@ input::placeholder {
     text-transform: uppercase;
 }
 
-.status-pending { background-color: #f1c40f; color: #000; }
-.status-stored { background-color: #2ecc71; color: #fff; }
-.status-overdue { background-color: #e74c3c; color: #fff; }
-.status-active { background-color: #3498db; color: #fff; }
+.status-pending {
+    background-color: #f1c40f;
+    color: #000;
+}
+
+.status-stored {
+    background-color: #2ecc71;
+    color: #fff;
+}
+
+.status-overdue {
+    background-color: #e74c3c;
+    color: #fff;
+}
+
+.status-active {
+    background-color: #3498db;
+    color: #fff;
+}
 
 /* Modals */
 .modal-overlay {
@@ -341,6 +384,7 @@ input::placeholder {
     .admin-wrapper {
         flex-direction: column;
     }
+
     .sidebar {
         width: 100%;
         height: auto;
@@ -374,6 +418,7 @@ input::placeholder {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -385,4 +430,3 @@ input::placeholder {
     filter: grayscale(1);
     background-color: rgba(255, 255, 255, 0.02) !important;
 }
-

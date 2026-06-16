@@ -1,25 +1,333 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pick N Go - Landing</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>PICK N GO | Smart Parcel Locker System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --bg: #0f1115;
+            --card: rgba(255, 255, 255, 0.06);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #c3f400;
+            --text: #ffffff;
+            --text-secondary: #bdbdbd;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================
+       HEADER
+    ========================= */
+
+        header {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            padding: 0 8%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+            background: rgba(15, 17, 21, 0.9);
+        }
+
+        header h2 {
+            color: var(--accent);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        /* =========================
+       MAIN CONTENT
+    ========================= */
+
+        .main-content {
+            flex: 1;
+
+            background:
+                linear-gradient(90deg,
+                    rgba(15, 17, 21, 1) 0%,
+                    rgba(15, 17, 21, 0.95) 25%,
+                    rgba(15, 17, 21, 0.80) 45%,
+                    rgba(15, 17, 21, 0.45) 65%,
+                    rgba(15, 17, 21, 0.15) 85%,
+                    rgba(15, 17, 21, 0) 100%),
+                url("bgLocker5.png");
+
+            background-size: 80%;
+            background-position: right center;
+            background-repeat: no-repeat;
+            ba
+        }
+
+        /* =========================
+       HERO SECTION
+    ========================= */
+
+        .hero {
+            padding: 15px 8% 0;
+        }
+
+        .hero-content {
+            max-width: 650px;
+        }
+
+        .tag {
+            color: var(--accent);
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: pulseText 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseText {
+
+            0%,
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 5px rgba(195, 244, 0, 0.2);
+            }
+
+            50% {
+                opacity: 0.7;
+                text-shadow: 0 0 15px rgba(195, 244, 0, 0.6);
+            }
+        }
+
+        .hero h1 {
+            font-size: 2.7rem;
+            font-weight: 800;
+            line-height: 1.05;
+            margin-bottom: 10px;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .line {
+            width: 70px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 50px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 500px;
+            margin-bottom: 15px;
+        }
+
+        /* =========================
+       ACTION CARDS
+    ========================= */
+
+        .actions {
+            width: 100%;
+            padding: 0 8%;
+
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 18px;
+            transition: 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(195, 244, 0, 0.8);
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 30px rgba(195, 244, 0, 0.15);
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .card-btn {
+            display: inline-block;
+            text-decoration: none;
+            background: var(--accent);
+            color: #000;
+            padding: 10px 18px;
+            border-radius: 50px;
+            font-weight: 700;
+            position: relative;
+            z-index: 10;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(195, 244, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(195, 244, 0, 0.6);
+            background: #d4ff1a;
+        }
+
+        /* =========================
+       FOOTER
+    ========================= */
+
+        footer {
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            color: #888;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            background: rgba(15, 17, 21, 0.9);
+        }
+
+        /* =========================
+       MOBILE
+    ========================= */
+
+        @media (max-width: 768px) {
+
+            html,
+            body {
+                overflow-y: auto;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .actions {
+                grid-template-columns: 1fr;
+                padding: 0 8% 20px;
+            }
+        }
+    </style>
+
 </head>
+
 <body>
-    <div class="container landing-grid">
-        <div class="landing-left">
-            <h1>PICK N GO -<br>SMART<br>PARCEL<br>LOCKER<br>SYSTEM</h1>
-        </div>
-        <div class="landing-right">
-            <p>Reserve a locker slot to store your parcel securely with 24/7 access at your convenience.</p>
-            <a href="login.html" class="btn">REQUEST LOCKER</a>
-            
-            <br><br><br>
-            
-            <p>Collect ur stored parcel by entering the assigned PIN.</p>
-            <a href="retrieve.html" class="btn">RETRIEVE LOCKER</a>
-        </div>
+
+    <!-- HEADER -->
+
+    <header>
+        <h2>PICK N GO</h2>
+    </header>
+
+    <!-- MAIN CONTENT -->
+
+    <div class="main-content">
+
+        <!-- HERO -->
+
+        <section class="hero">
+
+            <div class="hero-content">
+                <div class="tag">
+                    SECURE • SMART • 24/7 ACCESS
+                </div>
+
+                <h1>
+                    PICK N GO<br>
+                    <span>SMART PARCEL</span><br>
+                    LOCKER SYSTEM
+                </h1>
+
+                <div class="line"></div>
+
+                <p>
+                    A secure and convenient way to store and collect parcels.
+                    Access your locker anytime with a seamless digital experience.
+                </p>
+
+            </div>
+
+        </section>
+
+        <!-- CARDS -->
+
+        <section class="actions">
+
+            <div class="card">
+
+                <h2>REQUEST LOCKER</h2>
+
+                <p>
+                    Reserve a locker slot to store your parcel securely with
+                    24/7 access at your convenience.
+                </p>
+
+                <a href="login.html" class="card-btn">
+                    REQUEST LOCKER
+                </a>
+
+            </div>
+
+            <div class="card">
+
+                <h2>RETRIEVE LOCKER</h2>
+
+                <p>
+                    Collect your stored parcel by entering the assigned PIN.
+                </p>
+
+                <a href="retrieve.html" class="card-btn">
+                    RETRIEVE LOCKER
+                </a>
+
+            </div>
+
+        </section>
+
     </div>
+
+    <!-- FOOTER -->
+
+    <footer>
+        © 2025 PICK N GO Smart Parcel Locker System
+    </footer>
+
+
 </body>
+
 </html>
