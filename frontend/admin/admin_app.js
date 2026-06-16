@@ -36,13 +36,13 @@ async function emergencyOpen() {
 
 
 async function unlockLocker(lockerId) {
-    if (!confirm(`Are you sure you want to trigger emergency override to UNLOCK Locker L${lockerId}?`)) return;
+    if (!confirm(`Are you sure you want to trigger emergency override to UNLOCK Locker ${lockerId}?`)) return;
     try {
         const response = await fetch(`${API_BASE}/admin/override/${lockerId}`, {
             method: 'POST'
         });
         if (response.ok) {
-            alert(`EMERGENCY OVERRIDE: Locker L${lockerId} unlocked.`);
+            alert(`EMERGENCY OVERRIDE: Locker ${lockerId} unlocked.`);
             location.reload();
         } else {
             alert("Error: Could not trigger override.");
@@ -139,12 +139,12 @@ async function loadRequestTable() {
             }
 
             const statusColor = displayStatus === 'Pending' ? '#FFC107' : displayStatus === 'Approved' ? '#4CAF50' : '#f44336';
-            const parcelRef = r.requestedParcelRef || (r.parcelID ? `P${r.parcelID}` : '-');
+            const parcelRef = r.requestedParcelRef || (r.parcelID ? `${r.parcelID}` : '-');
 
             return `
                 <tr>
-                    <td>R${r.requestID}</td>
-                    <td>S${r.studentID}</td>
+                    <td>${r.requestID}</td>
+                    <td>${r.studentID}</td>
                     <td>${parcelRef}</td>
                     <td>${new Date(r.timestamp).toLocaleDateString()}</td>
                     <td><strong>${r.pin || '-'}</strong></td>
@@ -208,9 +208,9 @@ async function loadParcelTable() {
                     <button onclick="notifyAndRemove('${p.requestID}', '${contact}')" style="cursor:pointer; background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:3px;">Notify and Remove</button>
                 `;
             } else if (state === 'Emergency') {
-                statusLabel = '<span style="color: #ff9f43; font-weight: bold;">Emergency Requested</span>';
+                statusLabel = `<span onclick="viewEmergencyReport('${p.requestID}')" class="text-orange-400 font-bold hover:text-orange-300 hover:underline cursor-pointer transition-colors block text-center" style="color: #ff9f43; cursor: pointer; font-weight: bold;" title="Click to view report">Emergency Requested</span>`;
                 actionButtons = `
-                    <button onclick="unlockLocker('${p.lockerID}')" style="cursor:pointer; background:#ff9f43; color:white; border:none; padding:5px 10px; border-radius:3px;">Unlock Locker</button>
+                    <button onclick="unlockLocker('${p.lockerID}')" style="cursor:pointer; background:#ff9f43; color:white; border:none; padding:5px 10px; border-radius:3px;">Unlock</button>
                 `;
             } else if (state === 'Collected') {
                 statusLabel = '<span style="color: #888;">Collected</span>';
@@ -227,12 +227,18 @@ async function loadParcelTable() {
 
             const dateDisplay = entryDate ? entryDate.toLocaleDateString() : '-';
 
+            // Clean IDs for display
+            const displayReqID = String(p.requestID || '').replace(/\D/g, '');
+            const displayStudentID = String(p.studentID || '').replace(/\D/g, '');
+            const displayParcelID = String(p.parcelID || '').replace(/\D/g, '');
+            const displayLockerID = String(p.lockerID || '').replace(/\D/g, '');
+
             return `
                 <tr ${rowClass}>
-                    <td style="padding: 10px; border-bottom: 1px solid #444;">${p.requestID || '-'}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #444;">S${p.studentID}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #444;">P${p.parcelID}</td>
-                    <td style="padding: 10px; border-bottom: 1px solid #444;">L${p.lockerID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${displayReqID || '-'}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${displayStudentID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${displayParcelID}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${displayLockerID}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;"><strong>${p.parcelPIN || '-'}</strong></td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${dateDisplay}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${statusLabel}</td>
@@ -273,9 +279,9 @@ async function loadMonitorTable() {
 
             return `
                 <tr>
-                    <td>L${p.lockerID}</td>
-                    <td>P${p.parcelID}</td>
-                    <td>S${p.studentID}</td>
+                    <td>${p.lockerID}</td>
+                    <td>${p.parcelID}</td>
+                    <td>${p.studentID}</td>
                     <td>${entryDate.toLocaleDateString()}</td>
                     <td>${entryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                     <td>${diffDays}</td>
@@ -307,7 +313,7 @@ async function approveRequest(requestId, newStatus) {
         if (response.ok) {
             const data = await response.json();
             if (newStatus === 'Approved' && data.parcelPIN) {
-                alert(`Request Approved successfully!\nAssigned Locker: L${data.lockerID}\nGenerated PIN: ${data.parcelPIN}`);
+                alert(`Request Approved successfully!\nAssigned Locker: ${data.lockerID}\nGenerated PIN: ${data.parcelPIN}`);
             } else {
                 alert(`Request ${newStatus === 'Approved' ? 'Approved' : 'Rejected'} successfully!`);
             }
@@ -421,7 +427,7 @@ async function loadLockerDashboard() {
                     icon = "📦";
                     lockerClass = "occupied";
                 }
-                pInfo = `<p style="margin-top: 5px; color: #fff;">Parcel ID: P${activeParcel.parcelID}</p>`;
+                pInfo = `<p style="margin-top: 5px; color: #fff;">Parcel ID: ${activeParcel.parcelID}</p>`;
             }
 
             return `
@@ -477,6 +483,45 @@ function loadSidebar() {
             ${menuHtml}
         </ul>
     `;
+}
+
+async function viewEmergencyReport(requestId) {
+    try {
+        const response = await fetch(`${API_BASE}/admin/emergency_reports/${requestId}`);
+        if (response.ok) {
+            const data = await response.json();
+            
+            // Populate Modal Fields
+            document.getElementById('modalStudentName').textContent = data.name || '-';
+            document.getElementById('modalStudentID').textContent = String(data.studentID || '').replace(/\D/g, '') || '-';
+            document.getElementById('modalStudentEmail').textContent = data.email || 'Unknown';
+            document.getElementById('modalStudentPhone').textContent = data.phoneNo || 'Unknown';
+            
+            document.getElementById('modalLockerID').textContent = String(data.lockerID || '').replace(/\D/g, '') || '-';
+            document.getElementById('modalSubmittedTime').textContent = `${data.reportDate} ${data.reportTime}`;
+            document.getElementById('modalIssueText').textContent = data.issue || 'No reason provided.';
+            
+            // Show Modal
+            const modal = document.getElementById('emergencyModalOverlay');
+            if(modal) {
+                modal.style.display = 'flex';
+                modal.classList.remove('hidden');
+            }
+        } else {
+            alert("No emergency report data found for this request.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Network error while fetching emergency report.");
+    }
+}
+
+function closeEmergencyModal() {
+    const modal = document.getElementById('emergencyModalOverlay');
+    if(modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 }
 
 window.onload = loadAdminData;

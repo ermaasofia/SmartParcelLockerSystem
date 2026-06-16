@@ -65,3 +65,16 @@ class Locker(Base):
     
     # One-to-one: Locker owns the FK to Parcel
     parcel = relationship("Parcel", foreign_keys=[parcelID])
+
+class EmergencyReportDB(Base):
+    __tablename__ = "emergency_reports"
+    reportID = Column(Integer, primary_key=True, index=True)
+    requestID = Column(Integer, ForeignKey("requests.requestID"), nullable=True)
+    name = Column(String)
+    studentID = Column(String)
+    lockerID = Column(String)
+    reportDate = Column(String)
+    reportTime = Column(String)
+    issue = Column(String)
+    
+    request = relationship("Request", backref="emergency_report")

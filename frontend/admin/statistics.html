@@ -3,32 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pick N Go - Statistics & Records</title>
+    <title>Pick N Go - Statistics & History</title>
     <link rel="stylesheet" href="../styles.css">
-    <!-- Chart.js CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            corePlugins: {
+                preflight: false,
+            }
+        }
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-top: 30px;
+        .tab-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            font-weight: bold;
+            color: #888;
+            transition: all 0.3s;
+            background: transparent;
+            border-top: none; border-left: none; border-right: none;
         }
-        .chart-container {
-            background: #222;
+        .tab-btn:hover {
+            color: #ddd;
+        }
+        .tab-btn.active {
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Dashboard Card styling */
+        .stat-card {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
             padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #333;
-        }
-        .chart-container h3 {
             text-align: center;
-            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .stat-card .value {
+            font-size: 2.2rem;
+            font-weight: bold;
             color: #4CAF50;
         }
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
+        .chart-container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #444;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
     </style>
 </head>
@@ -38,110 +78,275 @@
             <!-- Sidebar content loaded dynamically by admin_app.js -->
         </nav>
 
-        <main class="admin-content">
-            <header class="admin-header">
-                <h1>STATISTICS & RECORDS</h1>
-                <div class="admin-links">
-                    <!-- Loaded by admin_app.js -->
-                </div>
+        <main class="admin-content" style="padding: 20px;">
+            <header class="admin-header" style="margin-bottom: 20px;">
+                <h1>MASTER ANALYTICS</h1>
+                <div class="admin-links"></div>
             </header>
 
-            <section>
-                <h2>SYSTEM USAGE ANALYTICS</h2>
-                <div class="stats-grid">
-                    <div class="chart-container">
-                        <h3>Most Frequently Used Locker</h3>
-                        <canvas id="lockerUsageChart"></canvas>
+            <!-- TABS -->
+            <div class="flex space-x-6 border-b border-gray-700 mb-8 pb-1">
+                <button class="tab-btn active text-lg" onclick="switchTab('history-tab')">STUDENT HISTORY LOG</button>
+                <button class="tab-btn text-lg" onclick="switchTab('stats-tab')">SYSTEM STATISTICS</button>
+            </div>
+
+            <!-- TAB 1: HISTORY -->
+            <section id="history-tab" class="tab-content active">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white m-0" style="margin:0;">Student Records Overview</h2>
+                    <div class="relative">
+                        <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="studentSearch" onkeyup="filterHistory()" placeholder="Search ID, Name, Phone..." class="pl-10 pr-4 py-2 rounded bg-zinc-800 text-white border border-gray-600 focus:outline-none focus:border-green-500 w-72 shadow-inner" style="color: white; background: #222; font-family: inherit;">
                     </div>
+                </div>
+                
+                <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #2a2a2a; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <thead style="background: #1f1f1f;">
+                        <tr>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Student ID</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Full Name</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Phone Number</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Email</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem; text-align: center;">Total Parcels Processed</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem; text-align: center;">Emergency Logs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        <tr><td colspan="6" class="text-center p-6 text-gray-400">Loading student history...</td></tr>
+                    </tbody>
+                </table>
+                
+                <h2 class="text-2xl font-bold text-white mt-12 mb-4 m-0" style="margin: 40px 0 16px 0;">Emergency Reports Archive</h2>
+                <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #2a2a2a; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <thead style="background: #1f1f1f;">
+                        <tr>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Report ID</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Request ID</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Student ID</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Name</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Locker</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Date & Time</th>
+                            <th style="padding: 14px 10px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Issue Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emergencyTableBody">
+                        <tr><td colspan="7" class="text-center p-6 text-gray-400">Loading emergency reports...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- TAB 2: STATISTICS -->
+            <section id="stats-tab" class="tab-content">
+                <!-- KPIs -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card">
+                        <h3>Total Registered Students</h3>
+                        <div class="value" id="kpi-students">...</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Completed Collections</h3>
+                        <div class="value" id="kpi-completed" style="color: #2196F3;">...</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Locker Occupancy Rate</h3>
+                        <div class="value" id="kpi-occupancy" style="color: #FF9800;">...</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Emergency Requests</h3>
+                        <div class="value" id="kpi-emergencies" style="color: #f44336;">...</div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 gap-6 mb-8">
                     <div class="chart-container">
-                        <h3>Busiest Peak Days of the Week</h3>
+                        <h3 class="text-center font-bold text-green-500 mb-4 uppercase tracking-widest text-sm" style="margin-bottom: 16px;">Monthly Parcel Traffic</h3>
+                        <div style="height: 300px; width: 100%;">
+                            <canvas id="monthlyTrafficChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-container mb-12">
+                    <h3 class="text-center font-bold text-blue-400 mb-4 uppercase tracking-widest text-sm" style="margin-bottom: 16px;">Busiest Peak Days of the Week</h3>
+                    <div style="height: 300px; width: 100%;">
                         <canvas id="peakDaysChart"></canvas>
                     </div>
                 </div>
             </section>
+
         </main>
     </div>
 
-    <script src="admin_app.js?v=7"></script>
+    <script src="admin_app.js?v=10"></script>
     <script>
-        async function loadStatistics() {
+        // Tab Switcher
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Search Filter for History
+        function filterHistory() {
+            const input = document.getElementById("studentSearch").value.toLowerCase();
+            const table = document.getElementById("studentTableBody");
+            const tr = table.getElementsByTagName("tr");
+            
+            for (let i = 0; i < tr.length; i++) {
+                const idTd = tr[i].getElementsByTagName("td")[0];
+                const nameTd = tr[i].getElementsByTagName("td")[1];
+                const phoneTd = tr[i].getElementsByTagName("td")[2];
+                if (idTd || nameTd || phoneTd) {
+                    const idVal = idTd.textContent || idTd.innerText;
+                    const nameVal = nameTd.textContent || nameTd.innerText;
+                    const phoneVal = phoneTd.textContent || phoneTd.innerText;
+                    if (idVal.toLowerCase().indexOf(input) > -1 || 
+                        nameVal.toLowerCase().indexOf(input) > -1 || 
+                        phoneVal.toLowerCase().indexOf(input) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }       
+            }
+        }
+
+        // Fetch and Render Data
+        async function loadData() {
             try {
-                const response = await fetch(`${API_BASE}/admin/statistics`);
-                const data = await response.json();
+                // 1. Load Student History Data
+                const histRes = await fetch(`${API_BASE}/admin/student_history`);
+                const historyData = await histRes.json();
+                const studentTbody = document.getElementById('studentTableBody');
                 
-                // 1. Render Locker Usage Chart (Bar Chart)
-                const ctxLocker = document.getElementById('lockerUsageChart').getContext('2d');
-                const lockerLabels = data.locker_usage.map(item => `Locker ${item.lockerID}`);
-                const lockerData = data.locker_usage.map(item => item.count);
+                if (historyData.length > 0) {
+                    studentTbody.innerHTML = historyData.map(s => `
+                        <tr class="hover:bg-zinc-700 transition-colors border-b border-zinc-700 last:border-0" style="border-bottom: 1px solid #333;">
+                            <td style="padding: 14px 12px; font-family: monospace; font-size: 1.05rem;">${s.studentID}</td>
+                            <td style="padding: 14px 12px; font-weight: 500;">${s.name}</td>
+                            <td style="padding: 14px 12px;">${s.phoneNo}</td>
+                            <td style="padding: 14px 12px; color: #aaa;">${s.email}</td>
+                            <td style="padding: 14px 12px; text-align: center; font-weight: bold; color: #4CAF50; font-size: 1.1rem;">${s.totalParcels}</td>
+                            <td style="padding: 14px 12px; text-align: center; font-weight: bold; color: ${s.emergencyCount > 0 ? '#ff9800' : '#555'}; font-size: 1.1rem;">${s.emergencyCount}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    studentTbody.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-gray-400">No student records found.</td></tr>';
+                }
+
+                // 2. Load Emergency Reports
+                const emRes = await fetch(`${API_BASE}/admin/emergency_reports`);
+                const emData = await emRes.json();
+                const emTbody = document.getElementById('emergencyTableBody');
                 
-                new Chart(ctxLocker, {
+                if (emData.length > 0) {
+                    emTbody.innerHTML = emData.map(r => `
+                        <tr class="hover:bg-zinc-700 transition-colors border-b border-zinc-700 last:border-0" style="border-bottom: 1px solid #333;">
+                            <td style="padding: 12px 10px; font-family: monospace; color: #ff9800;">#${r.reportID}</td>
+                            <td style="padding: 12px 10px;">${r.requestID || '-'}</td>
+                            <td style="padding: 12px 10px;">${String(r.studentID).replace(/\\D/g, '')}</td>
+                            <td style="padding: 12px 10px;">${r.name}</td>
+                            <td style="padding: 12px 10px; font-weight: bold;">L${r.lockerID}</td>
+                            <td style="padding: 12px 10px; font-size: 0.9rem; color: #aaa;">${r.reportDate} <br> ${r.reportTime}</td>
+                            <td style="padding: 12px 10px; max-width: 250px; white-space: normal; line-height: 1.4; color: #ddd;">${r.issue}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    emTbody.innerHTML = '<tr><td colspan="7" class="text-center p-6 text-gray-400">No emergency reports found.</td></tr>';
+                }
+
+                // 3. Load Statistics & Render Charts
+                const statsRes = await fetch(`${API_BASE}/admin/statistics`);
+                const statsData = await statsRes.json();
+                
+                // Populate KPIs
+                document.getElementById('kpi-students').innerText = statsData.kpis.total_students;
+                document.getElementById('kpi-completed').innerText = statsData.kpis.total_completed;
+                document.getElementById('kpi-occupancy').innerText = statsData.kpis.occupancy_rate;
+                document.getElementById('kpi-emergencies').innerText = statsData.kpis.total_emergencies;
+
+                // Chart defaults for Dark Mode styling
+                Chart.defaults.color = '#aaa';
+                Chart.defaults.font.family = "'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+
+                // Render Monthly Traffic (Bar)
+                const ctxTraffic = document.getElementById('monthlyTrafficChart').getContext('2d');
+                new Chart(ctxTraffic, {
                     type: 'bar',
                     data: {
-                        labels: lockerLabels,
+                        labels: statsData.monthly_traffic.map(d => d.month),
                         datasets: [{
-                            label: 'Total Uses',
-                            data: lockerData,
-                            backgroundColor: 'rgba(76, 175, 80, 0.6)',
-                            borderColor: 'rgba(76, 175, 80, 1)',
-                            borderWidth: 1
+                            label: 'Parcels Processed',
+                            data: statsData.monthly_traffic.map(d => d.count),
+                            backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                            borderColor: '#4CAF50',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            hoverBackgroundColor: 'rgba(76, 175, 80, 0.9)'
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: '#ccc' } },
-                            x: { ticks: { color: '#ccc' } }
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false } 
                         },
-                        plugins: {
-                            legend: { labels: { color: '#fff' } }
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#444' } },
+                            x: { grid: { display: false } }
                         }
                     }
                 });
 
-                // 2. Render Peak Days Chart (Line or Polar Area)
+
+                // Render Busiest Peak Days (Line Chart)
                 const ctxDays = document.getElementById('peakDaysChart').getContext('2d');
-                const daysLabels = data.peak_days.map(item => item.day);
-                const daysData = data.peak_days.map(item => item.count);
-                
                 new Chart(ctxDays, {
                     type: 'line',
                     data: {
-                        labels: daysLabels,
+                        labels: statsData.peak_days.map(d => d.day),
                         datasets: [{
-                            label: 'Number of Requests',
-                            data: daysData,
+                            label: 'Locker Traffic',
+                            data: statsData.peak_days.map(d => d.count),
                             fill: true,
-                            backgroundColor: 'rgba(33, 150, 243, 0.2)',
-                            borderColor: 'rgba(33, 150, 243, 1)',
-                            tension: 0.3,
-                            borderWidth: 2,
-                            pointBackgroundColor: '#fff'
+                            backgroundColor: 'rgba(33, 150, 243, 0.15)',
+                            borderColor: '#2196F3',
+                            tension: 0.4,
+                            borderWidth: 3,
+                            pointBackgroundColor: '#2a2a2a',
+                            pointBorderColor: '#2196F3',
+                            pointBorderWidth: 2,
+                            pointRadius: 4,
+                            pointHoverRadius: 6
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: true, ticks: { color: '#ccc' } },
-                            x: { ticks: { color: '#ccc' } }
-                        },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
                         plugins: {
-                            legend: { labels: { color: '#fff' } }
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#444' } },
+                            x: { grid: { color: '#333' } }
                         }
                     }
                 });
+
             } catch (err) {
-                console.error("Failed to load statistics:", err);
+                console.error("Failed to load dashboard data:", err);
             }
         }
-        
-        // Ensure adminName is Administrator
+
+        // Auth Check & Initialization
         const checkAdmin = localStorage.getItem('adminName');
         if (checkAdmin !== 'Administrator') {
             alert('Access Denied: Master Role Required.');
             window.location.href = 'dashboard.html';
         } else {
-            // Load stats when the page loads
-            document.addEventListener('DOMContentLoaded', loadStatistics);
+            document.addEventListener('DOMContentLoaded', loadData);
         }
     </script>
 </body>

@@ -262,7 +262,12 @@ async def verify_pin(verify: schemas.PinVerify, db: Session = Depends(get_db)):
     ).first()
     
     if not parcel:
-        raise HTTPException(status_code=400, detail="Invalid or expired PIN")
+        raise HTTPException(status_code=400, detail="Invalid PIN")
+        
+    # Ensure PIN is only used once / Parcel is still physically in the locker
+    locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
+    if not locker or locker.parcelID != parcel.parcelID:
+        raise HTTPException(status_code=400, detail="PIN has already been used or parcel is no longer available.")
         
     # Check expiry (72h limit)
     if datetime.utcnow() - parcel.storageTime > timedelta(hours=72):
@@ -350,12 +355,26 @@ def list_parcels(db: Session = Depends(get_db)):
         # Check if overdue and auto-apply penalty
         is_overdue = False
         if parcel.storageTime:
-            # Check if request status is still active (Approved, Emergency Requested, Stored, Available or Pending)
+            # Check if request status is still active
             if request_status in ["Approved", "Emergency Requested", "Stored", "Available", "Pending", None]:
-                is_overdue = (datetime.utcnow() - parcel.storageTime) > timedelta(hours=72)
-                if is_overdue and not parcel.hasPenalty:
-                    parcel.hasPenalty = True
-                    db.commit()
+                # Ghost cleanup: Is the parcel still in the locker?
+                locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
+                if not locker or locker.parcelID != parcel.parcelID:
+                    # It's a ghost. Mark it as Removed.
+                    request_obj = db.query(models.Request).filter(models.Request.requestID == request_id).first()
+                    if request_obj:
+                        request_obj.requestStatus = "Removed"
+                        db.commit()
+                    request_status = "Removed"
+                else:
+                    is_overdue = (datetime.utcnow() - parcel.storageTime) > timedelta(hours=72)
+                    if is_overdue and not parcel.hasPenalty:
+                        parcel.hasPenalty = True
+                        db.commit()
+
+        # Filter out completely orphaned testing parcels with no request ID
+        if not request_id:
+            continue
 
         p_dict = {
             "parcelID": parcel.parcelID,
@@ -365,7 +384,7 @@ def list_parcels(db: Session = Depends(get_db)):
             "storageTime": parcel.storageTime.isoformat() if parcel.storageTime else None,
             "studentID": student_id or "Unknown",
             "phoneNo": phone_no or "Unknown",
-            "requestID": request_id or "Unknown",
+            "requestID": request_id,
             "status": request_status or "Available"
         }
         response.append(p_dict)
@@ -375,14 +394,22 @@ def list_parcels(db: Session = Depends(get_db)):
 def list_lockers(db: Session = Depends(get_db)):
     return db.query(models.Locker).all()
 
+import subprocess
+
 def send_email_notification(to_email: str, subject: str, body: str):
     print("\n" + "="*60)
-    print(f"📧 AUTOMATED EMAIL DISPATCHED")
+    print(f"📧 AUTOMATED EMAIL DISPATCHED (Via Nodemailer)")
     print(f"TO:      {to_email}")
     print(f"SUBJECT: {subject}")
     print("-" * 60)
     print(body)
     print("="*60 + "\n")
+    
+    # Call the Node.js mailer script
+    try:
+        subprocess.run(["node", "mailer.js", to_email, subject, body], check=True)
+    except Exception as e:
+        print(f"Failed to send email via Node: {e}")
 
 @app.put("/admin/requests/{requestID}/approve")
 def approve_request(requestID: int, status_update: dict, db: Session = Depends(get_db)):
@@ -436,6 +463,7 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
                 f"Hello,\n\nGreat news! Your parcel has been approved and stored.\n"
                 f"Locker Number: {assigned_locker.lockerID}\n"
                 f"Parcel ID: {new_parcel.parcelID}\n"
+                f"PIN: {new_parcel.parcelPIN}\n"
                 f"Please collect within 72 hours.\n\nSmart Locker Admin"
             )
             send_email_notification(to_email, "Your Parcel is Ready for Collection!", body)
@@ -518,14 +546,22 @@ async def admin_override(lockerID: int, db: Session = Depends(get_db)):
     locker = db.query(models.Locker).filter(models.Locker.lockerID == lockerID).first()
     if not locker:
         raise HTTPException(status_code=404, detail="Locker not found")
+        
+    # Set locker to open
+    # Note: Hardware integration would go here
     
-    if locker.parcelID:
-        request = db.query(models.Request).filter(models.Request.parcelID == locker.parcelID).first()
-        if request:
-            request.requestStatus = "Removed"
-        locker.lockerStatus = "Available"
-        locker.parcelID = None
-        db.commit()
+    # Source of truth: find active request for this locker
+    request = db.query(models.Request).join(models.Parcel).filter(
+        models.Parcel.lockerID == lockerID,
+        models.Request.requestStatus.in_(["Approved", "Stored", "Emergency Requested"])
+    ).first()
+    
+    if request:
+        request.requestStatus = "Removed"
+        
+    locker.lockerStatus = "Available"
+    locker.parcelID = None
+    db.commit()
     
     await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": lockerID, "mode": "EMERGENCY"})
     return {"status": "Override Successful", "locker_id": lockerID}
@@ -533,6 +569,13 @@ async def admin_override(lockerID: int, db: Session = Depends(get_db)):
 @app.get("/admin/statistics")
 def get_statistics(db: Session = Depends(get_db)):
     from sqlalchemy import func
+    
+    # KPIs
+    total_students = db.query(models.Customer).count()
+    total_completed = db.query(models.Request).filter(models.Request.requestStatus == "Collected").count()
+    total_emergencies = db.query(models.EmergencyReportDB).count()
+    occupied_lockers = db.query(models.Locker).filter(models.Locker.lockerStatus == "Occupied").count()
+    occupancy_rate = f"{int((occupied_lockers / 3) * 100)}%"
     
     # 1. Most frequently used locker
     locker_counts = db.query(
@@ -542,27 +585,64 @@ def get_statistics(db: Session = Depends(get_db)):
     
     locker_stats = [{"lockerID": lc[0], "count": lc[1]} for lc in locker_counts]
     
-    # 2. Busiest Peak Days of the Week
-    # We can fetch all timestamps and calculate in python to avoid sqlite specific datetime functions
+    # 2. Monthly parcel traffic
+    parcels = db.query(models.Parcel.storageTime).all()
+    months_count = {
+        "Jan": 0, "Feb": 0, "Mar": 0, "Apr": 0, "May": 0, "Jun": 0,
+        "Jul": 0, "Aug": 0, "Sep": 0, "Oct": 0, "Nov": 0, "Dec": 0
+    }
+    months_map = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    for p in parcels:
+        if p.storageTime:
+            months_count[months_map[p.storageTime.month - 1]] += 1
+            
+    monthly_traffic = [{"month": k, "count": v} for k, v in months_count.items()]
+    
+    # 3. Busiest Peak Days of the Week
     requests = db.query(models.Request.timestamp).all()
     days_count = {
         "Monday": 0, "Tuesday": 0, "Wednesday": 0, 
         "Thursday": 0, "Friday": 0, "Saturday": 0, "Sunday": 0
     }
-    
     days_map = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     for r in requests:
         if r.timestamp:
-            day_name = days_map[r.timestamp.weekday()]
-            days_count[day_name] += 1
+            days_count[days_map[r.timestamp.weekday()]] += 1
             
-    # Format for chart.js
     peak_days = [{"day": k, "count": v} for k, v in days_count.items()]
     
     return {
+        "kpis": {
+            "total_students": total_students,
+            "total_completed": total_completed,
+            "occupancy_rate": occupancy_rate,
+            "total_emergencies": total_emergencies
+        },
+        "monthly_traffic": monthly_traffic,
         "locker_usage": locker_stats,
         "peak_days": peak_days
     }
+
+@app.get("/admin/student_history")
+def get_student_history(db: Session = Depends(get_db)):
+    customers = db.query(models.Customer).all()
+    history = []
+    for c in customers:
+        user = db.query(models.User).filter(models.User.userID == c.userID).first()
+        total_parcels = db.query(models.Request).filter(models.Request.studentID == c.studentID, models.Request.parcelID.isnot(None)).count()
+        emergency_count = db.query(models.EmergencyReportDB).filter(models.EmergencyReportDB.studentID == c.studentID).count()
+        
+        raw_id = "".join(filter(str.isdigit, c.studentID))
+        
+        history.append({
+            "studentID": raw_id,
+            "name": user.name if user else "Unknown",
+            "phoneNo": c.phoneNo,
+            "email": user.email if user else "Unknown",
+            "totalParcels": total_parcels,
+            "emergencyCount": emergency_count
+        })
+    return history
 
 @app.get("/health")
 def health_check():
@@ -570,23 +650,82 @@ def health_check():
 
 @app.post("/emergency/report")
 def submit_emergency_report(data: schemas.EmergencyReport, db: Session = Depends(get_db)):
-    # Find active parcel in the locker
-    locker = db.query(models.Locker).filter(models.Locker.lockerID == data.lockerID).first()
-    if not locker or not locker.parcelID:
-        raise HTTPException(status_code=400, detail="No active parcel found in this locker")
+    try:
+        lid = int(data.lockerID)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid Locker ID format (must be a number)")
         
-    # Find request associated with this parcel and studentID
-    request = db.query(models.Request).filter(
-        models.Request.parcelID == locker.parcelID,
-        models.Request.studentID == data.studentID
-    ).first()
+    # Find if locker exists
+    locker = db.query(models.Locker).filter(models.Locker.lockerID == lid).first()
+    if not locker:
+        raise HTTPException(status_code=400, detail="Locker not found")
+        
+    # Source of truth: check if there's an active request for a parcel in this locker belonging to this student
+    request = db.query(models.Request).join(models.Parcel).filter(
+        models.Parcel.lockerID == lid,
+        models.Request.studentID == data.studentID,
+        models.Request.requestStatus.in_(["Approved", "Stored", "Available", "Pending"])
+    ).order_by(models.Request.requestID.desc()).first()
     
     if not request:
-        raise HTTPException(status_code=400, detail="No matching active request found for this locker and student ID")
+        raise HTTPException(status_code=400, detail="No active parcel found in this locker for the provided Student ID")
         
     request.requestStatus = "Emergency Requested"
+    
+    new_report = models.EmergencyReportDB(
+        requestID=request.requestID,
+        name=data.name,
+        studentID=data.studentID,
+        lockerID=str(data.lockerID),
+        reportDate=data.reportDate,
+        reportTime=data.reportTime,
+        issue=data.issue
+    )
+    db.add(new_report)
+    
     db.commit()
     return {"message": "Emergency report submitted successfully"}
+    
+@app.get("/admin/emergency_reports/{requestID}")
+def get_emergency_report(requestID: int, db: Session = Depends(get_db)):
+    report = db.query(models.EmergencyReportDB).filter(models.EmergencyReportDB.requestID == requestID).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="No emergency report found for this request")
+        
+    # Fetch additional relational data
+    email = "Unknown"
+    phoneNo = "Unknown"
+    
+    request_record = db.query(models.Request).filter(models.Request.requestID == requestID).first()
+    if request_record and request_record.customer:
+        phoneNo = request_record.customer.phoneNo
+        if request_record.customer.user:
+            email = request_record.customer.user.email
+
+    return {
+        "name": report.name,
+        "studentID": report.studentID,
+        "email": email,
+        "phoneNo": phoneNo,
+        "lockerID": report.lockerID,
+        "reportDate": report.reportDate,
+        "reportTime": report.reportTime,
+        "issue": report.issue
+    }
+
+@app.get("/admin/emergency_reports")
+def get_all_emergency_reports(db: Session = Depends(get_db)):
+    reports = db.query(models.EmergencyReportDB).all()
+    return [{
+        "reportID": r.reportID,
+        "requestID": r.requestID,
+        "name": r.name,
+        "studentID": r.studentID,
+        "lockerID": r.lockerID,
+        "reportDate": r.reportDate,
+        "reportTime": r.reportTime,
+        "issue": r.issue
+    } for r in reports]
 
 # Mount frontend
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")

@@ -68,7 +68,9 @@
             
             const name = document.getElementById('emName').value;
             const studentID = document.getElementById('emStudentID').value;
-            const lockerID = parseInt(document.getElementById('emLockerID').value);
+            const lockerID = document.getElementById('emLockerID').value;
+            const reportDate = document.getElementById('emDate').value;
+            const reportTime = document.getElementById('emTime').value;
             const issue = document.getElementById('emIssue').value;
             const msgEl = document.getElementById('emergencyMessage');
 
@@ -80,8 +82,11 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
+                        name: name,
                         studentID: studentID,
                         lockerID: lockerID,
+                        reportDate: reportDate,
+                        reportTime: reportTime,
                         issue: issue
                     })
                 });
@@ -92,7 +97,7 @@
                     msgEl.style.color = "green";
                     e.target.reset();
                 } else {
-                    msgEl.innerText = data.detail || "Error submitting emergency report.";
+                    msgEl.innerText = (typeof data.detail === 'string') ? data.detail : JSON.stringify(data.detail) || "Error submitting emergency report.";
                     msgEl.style.color = "red";
                 }
             } catch (err) {

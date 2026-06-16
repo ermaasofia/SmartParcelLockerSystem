@@ -95,6 +95,9 @@ class UserLogin(BaseModel):
     password: str
 
 class EmergencyReport(BaseModel):
+    name: str
     studentID: str
-    lockerID: int
+    lockerID: str
+    reportDate: str
+    reportTime: str
     issue: str

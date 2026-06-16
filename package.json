@@ -1,0 +1,28 @@
+{
+  "name": "smart-locker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ermaasofia/SmartParcelLockerSystem.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ermaasofia/SmartParcelLockerSystem/issues"
+  },
+  "homepage": "https://github.com/ermaasofia/SmartParcelLockerSystem#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "nodemailer": "^9.0.0"
+  }
+}
