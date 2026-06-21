@@ -1,33 +1,14 @@
 :root {
-    --bg-color: #2A2A2A;
-    --text-color: #F4F4F0;
-    --accent-color: #EFEFDF;
-    --input-text: #2A2A2A;
-    --font-heading: 'Georgia', serif;
-    --font-body: 'Arial', sans-serif;
+    --bg-color: #0f1115;
+    --card: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.1);
+    --accent-color: #c3f400;
+    --text-color: #ffffff;
+    --text-secondary: #bdbdbd;
+    --input-text: #ffffff;
+    --font-heading: 'Poppins', sans-serif;
+    --font-body: 'Poppins', sans-serif;
 }
-
-.hero {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 0 8%;
-
-    background:
-        linear-gradient(90deg,
-            rgba(15, 17, 21, 1) 0%,
-            rgba(15, 17, 21, 0.95) 25%,
-            rgba(15, 17, 21, 0.80) 45%,
-            rgba(15, 17, 21, 0.45) 65%,
-            rgba(15, 17, 21, 0.15) 85%,
-            rgba(15, 17, 21, 0) 100%),
-        url("bgLocker.png");
-
-    background-size: cover;
-    background-position: right center;
-    background-repeat: no-repeat;
-}
-
 
 * {
     box-sizing: border-box;
@@ -43,98 +24,120 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    background-image: linear-gradient(90deg, rgba(15, 17, 21, 1) 0%, rgba(15, 17, 21, 0.9) 100%), url("bgLocker5.png");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
 }
 
 .container {
     width: 100%;
-    max-width: 800px;
-    padding: 20px;
+    max-width: 500px;
+    padding: 30px;
 }
 
 /* Typography */
-h1 {
+h1,
+h2,
+h3 {
     font-family: var(--font-heading);
-    font-size: 3rem;
-    font-weight: bold;
+    font-weight: 700;
     margin-bottom: 20px;
-    text-transform: uppercase;
     text-align: center;
 }
 
 h2 {
-    font-family: var(--font-heading);
-    font-size: 2rem;
-    text-transform: uppercase;
+    font-size: 1.8rem;
     margin-bottom: 30px;
-    text-align: center;
 }
 
 a {
-    color: var(--text-color);
-    text-decoration: underline;
+    color: var(--accent-color);
+    text-decoration: none;
     font-size: 0.9rem;
+    transition: 0.2s;
+}
+
+a:hover {
+    text-decoration: underline;
+    opacity: 0.8;
 }
 
 /* Forms and Inputs */
 .form-group {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
 }
 
 .form-group label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-    letter-spacing: 1px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    letter-spacing: 0.5px;
 }
 
-input {
+input,
+select,
+textarea {
     width: 100%;
-    padding: 15px;
-    border: none;
-    background-color: var(--accent-color);
+    padding: 12px 15px;
+    border: 1px solid var(--border);
+    background-color: rgba(0, 0, 0, 0.2);
     color: var(--input-text);
     font-size: 1rem;
+    border-radius: 8px;
     outline: none;
+    transition: border-color 0.3s;
+    font-family: var(--font-body);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent-color);
 }
 
 input::placeholder {
-    color: #888;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 1px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 /* Buttons */
 .btn {
     display: inline-block;
     width: 100%;
-    padding: 15px;
-    margin-top: 20px;
+    padding: 12px 20px;
+    margin-top: 15px;
     background-color: var(--accent-color);
-    color: var(--input-text);
+    color: #000;
     border: none;
     border-radius: 30px;
     font-size: 1rem;
-    font-weight: bold;
-    text-transform: uppercase;
+    font-weight: 700;
     cursor: pointer;
     text-align: center;
     text-decoration: none;
-    transition: transform 0.2s, background-color 0.2s;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(195, 244, 0, 0.2);
 }
 
 .btn:hover {
-    transform: scale(1.02);
-    background-color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(195, 244, 0, 0.4);
+    background-color: #d4ff1a;
 }
 
 /* Layouts */
 .auth-box {
-    max-width: 400px;
+    background: var(--card);
+    backdrop-filter: blur(15px);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 30px;
     margin: 0 auto;
     text-align: center;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 /* Landing Page Specific */
@@ -220,8 +223,10 @@ input::placeholder {
 
 .sidebar {
     width: 250px;
-    background-color: var(--accent-color);
-    color: var(--input-text);
+    background: rgba(15, 17, 21, 0.95);
+    backdrop-filter: blur(10px);
+    border-right: 1px solid var(--border);
+    color: var(--text-color);
     padding: 30px 0;
     display: flex;
     flex-direction: column;
@@ -241,14 +246,16 @@ input::placeholder {
     padding: 15px 20px;
     cursor: pointer;
     text-transform: uppercase;
-    font-weight: bold;
-    border-bottom: 1px solid #dcdcdc;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     transition: background 0.3s;
 }
 
 .sidebar-menu li:hover,
 .sidebar-menu li.active {
-    background-color: #dcdcdc;
+    background-color: rgba(195, 244, 0, 0.1);
+    color: var(--accent-color);
 }
 
 .sidebar-menu a {
@@ -269,7 +276,7 @@ input::placeholder {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 2px solid var(--accent-color);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 10px;
     margin-bottom: 30px;
 }
@@ -291,19 +298,29 @@ input::placeholder {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .data-table th,
 .data-table td {
-    border: 1px solid var(--accent-color);
-    padding: 12px;
-    text-align: center;
+    border-bottom: 1px solid var(--border);
+    padding: 15px;
+    text-align: left;
+    font-size: 0.9rem;
 }
 
 .data-table th {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(0, 0, 0, 0.4);
     text-transform: uppercase;
     font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.data-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.02);
 }
 
 .status-tag {

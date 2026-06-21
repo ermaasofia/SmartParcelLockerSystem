@@ -247,7 +247,6 @@ def assign_parcel(parcel: schemas.ParcelCreate, db: Session = Depends(get_db)):
     db.add(db_request)
     db.commit()
     
-    print(f"[SMS MOCK] Sent PIN {parcel.parcelPIN} for Locker {parcel.lockerID}")
     
     # Check if all 3 lockers are full and auto-reject others
     check_and_auto_reject_if_full(db)
@@ -410,6 +409,39 @@ def send_email_notification(to_email: str, subject: str, body: str):
         subprocess.run(["node", "mailer.js", to_email, subject, body], check=True)
     except Exception as e:
         print(f"Failed to send email via Node: {e}")
+
+@app.post("/admin/notify")
+def send_manual_notification(data: schemas.NotifyRequest, db: Session = Depends(get_db)):
+    """Triggers an email notification to the specified contact."""
+    # Find email by contact (it might be a student ID, phone number, or email)
+    # The frontend sometimes passes studentID or phoneNo.
+    contact = data.contact
+    
+    # Try to find a user/customer matching this contact
+    user_email = None
+    if "@" in contact:
+        user_email = contact
+    else:
+        # Search by studentID
+        customer = db.query(models.Customer).filter(models.Customer.studentID == contact).first()
+        if not customer:
+             # Search by phoneNo
+             customer = db.query(models.Customer).filter(models.Customer.phoneNo == contact).first()
+             
+        if customer:
+            user = db.query(models.User).filter(models.User.userID == customer.userID).first()
+            if user:
+                user_email = user.email
+                
+    if not user_email:
+        user_email = f"{contact}@student.edu" # Fallback if email not found
+        
+    subject = "Pick N Go - Admin Notification"
+    body = data.message
+    
+    send_email_notification(user_email, subject, body)
+    return {"message": f"Notification sent to {user_email}", "email": user_email}
+
 
 @app.put("/admin/requests/{requestID}/approve")
 def approve_request(requestID: int, status_update: dict, db: Session = Depends(get_db)):

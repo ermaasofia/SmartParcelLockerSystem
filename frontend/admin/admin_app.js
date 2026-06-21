@@ -54,13 +54,32 @@ async function unlockLocker(lockerId) {
 }
 
 // Send Notification (Fig 26)
-function sendNotification(contactNumber) {
+async function sendNotification(contactNumber) {
     console.log(`[admin_app.js] sendNotification() triggered for contact: ${contactNumber}`);
-    alert(`Notification sent to ${contactNumber}: Your parcel is OVERDUE! Please collect it immediately.`);
+    const message = `Hello,\n\nYour parcel is OVERDUE! Please collect it immediately to avoid further penalties.\n\nSmart Locker Admin`;
+    try {
+        const response = await fetch(`${API_BASE}/admin/notify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contact: contactNumber, message: message })
+        });
+        if (response.ok) {
+            const data = await response.json();
+            alert(`Notification sent successfully to ${data.email}.`);
+        } else {
+            alert("Failed to send notification.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Error sending notification.");
+    }
 }
 
 async function notifyAndRemove(requestId, contactNumber) {
-    sendNotification(contactNumber);
+    const confirmRemove = confirm(`Are you sure you want to notify and remove request ${requestId}?`);
+    if (!confirmRemove) return;
+    
+    await sendNotification(contactNumber);
     await updateRequestStatus(requestId, 'Removed');
 }
 

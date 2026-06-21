@@ -79,7 +79,6 @@
             background-size: 80%;
             background-position: right center;
             background-repeat: no-repeat;
-            ba
         }
 
         /* =========================
@@ -87,7 +86,8 @@
     ========================= */
 
         .hero {
-            padding: 15px 8% 0;
+            padding-left: 100px;
+            padding-top: 20px;
         }
 
         .hero-content {
@@ -101,7 +101,7 @@
             letter-spacing: 3px;
             margin-bottom: 10px;
             display: inline-block;
-            animation: pulseText 2s infinite ease-in-out;
+            animation: pulseText 5s infinite ease-in-out;
         }
 
         @keyframes pulseText {
@@ -159,8 +159,12 @@
         }
 
         .card {
-            background: var(--card);
-            backdrop-filter: blur(15px);
+            /* Change this to a solid color like black or dark grey */
+            background: #000000;
+
+            /* Remove the blur effect completely */
+            backdrop-filter: none;
+
             border: 1px solid var(--border);
             border-radius: 20px;
             padding: 18px;
@@ -204,6 +208,43 @@
             transform: translateY(-3px);
             box-shadow: 0 5px 20px rgba(195, 244, 0, 0.6);
             background: #d4ff1a;
+        }
+
+        /* Animations */
+        .slide-in-left {
+            animation: slideInLeft 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        @keyframes slideInLeft {
+            0% {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         /* =========================
@@ -288,7 +329,7 @@
 
         <section class="actions">
 
-            <div class="card">
+            <div class="card slide-in-left">
 
                 <h2>REQUEST LOCKER</h2>
 
@@ -303,7 +344,7 @@
 
             </div>
 
-            <div class="card">
+            <div class="card slide-in-right">
 
                 <h2>RETRIEVE LOCKER</h2>
 

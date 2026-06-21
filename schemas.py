@@ -101,3 +101,8 @@ class EmergencyReport(BaseModel):
     reportDate: str
     reportTime: str
     issue: str
+
+class NotifyRequest(BaseModel):
+    contact: str
+    message: str
+

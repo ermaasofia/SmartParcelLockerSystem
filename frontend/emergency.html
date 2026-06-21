@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pick N Go - Emergency Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -16,21 +17,24 @@
         <p>Please submit this form to report your issue with the locker.</p>
         <form id="emergencyForm">
 
-            <input type="text" id="emName" placeholder="Your Name" required
-                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
-            <input type="text" id="emStudentID" placeholder="Student ID" required
-                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
-
-            <input type="text" id="emLockerID" placeholder="Locker ID" readonly required
-                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
-
-            <input type="date" id="emDate" required
-                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
-            <input type="time" id="emTime" required
-                style="width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;">
-
-            <textarea id="emIssue" placeholder="Describe the issue" required
-                style="width: 100%; height: 100px; padding: 10px; margin-bottom: 15px; border-radius: 5px; border: none;"></textarea>
+            <div class="form-group">
+                <input type="text" id="emName" placeholder="Your Name" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="emStudentID" placeholder="Student ID" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="emLockerID" placeholder="Locker ID" readonly required>
+            </div>
+            <div class="form-group">
+                <input type="date" id="emDate" required>
+            </div>
+            <div class="form-group">
+                <input type="time" id="emTime" required>
+            </div>
+            <div class="form-group">
+                <textarea id="emIssue" placeholder="Describe the issue" required rows="4"></textarea>
+            </div>
 
             <button type="submit" class="btn">SUBMIT REPORT</button>
             <div class="helpline-box"
