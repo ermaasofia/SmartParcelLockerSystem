@@ -144,7 +144,7 @@ input::placeholder {
 .landing-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    gap: 70px;
     align-items: center;
 }
 
@@ -222,12 +222,19 @@ input::placeholder {
         padding: 0 5% !important;
     }
 
-    h1, h2, h3 {
+    h1,
+    h2,
+    h3 {
         font-size: 1.5rem !important;
         line-height: 1.2;
     }
 
-    p, a, input, button, .btn, .card-btn {
+    p,
+    a,
+    input,
+    button,
+    .btn,
+    .card-btn {
         font-size: 0.9rem !important;
     }
 
