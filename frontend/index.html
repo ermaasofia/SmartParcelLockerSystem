@@ -267,15 +267,23 @@
             html,
             body {
                 overflow-y: auto;
+                overflow-x: hidden;
             }
 
             .hero h1 {
-                font-size: 2.2rem;
+                font-size: 2rem !important;
             }
 
             .actions {
-                grid-template-columns: 1fr;
-                padding: 0 8% 20px;
+                grid-template-columns: 1fr !important;
+                padding: 0 5% 20px !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            .card {
+                width: 100%;
+                margin-bottom: 15px;
             }
         }
     </style>

@@ -208,8 +208,31 @@ input::placeholder {
     }
 
     .landing-left h1 {
-        font-size: 3rem;
+        font-size: 2.5rem !important;
         text-align: center;
+    }
+
+    .container {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .actions {
+        grid-template-columns: 1fr !important;
+        padding: 0 5% !important;
+    }
+
+    h1, h2, h3 {
+        font-size: 1.5rem !important;
+        line-height: 1.2;
+    }
+
+    p, a, input, button, .btn, .card-btn {
+        font-size: 0.9rem !important;
+    }
+
+    body {
+        overflow-x: hidden;
     }
 }
 
@@ -294,16 +317,14 @@ input::placeholder {
 }
 
 
-@keyframes dropParcel {
+@keyframes fall {
     0% {
         transform: translateY(0);
     }
 
     100% {
-        transform: translateY(100vh);
+        transform: translateY(150vh);
     }
-
-    /* Move to the bottom of the screen */
 }
 
 /* Data Tables */
@@ -395,7 +416,7 @@ input::placeholder {
     }
 
     100% {
-        transform: translateY(120vh) rotate(360deg);
+        transform: translateY(150vh) rotate(360deg);
     }
 }
 
