@@ -110,11 +110,10 @@ if (requestForm) {
 
         const studentId = document.getElementById('studentID').value.trim();
         const parcelId = document.getElementById('parcelID').value.trim();
-        const reqDate = document.getElementById('date').value;
         const msgEl = document.getElementById('request-message');
         const submitBtn = requestForm.querySelector('button[type="submit"]');
 
-        if (!studentId || !parcelId || !reqDate) {
+        if (!studentId || !parcelId) {
             setMessage(msgEl, 'Please fill in all fields.');
             return;
         }
@@ -129,8 +128,7 @@ if (requestForm) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     studentID: studentId,
-                    parcelID: parseInt(parcelId) || null,
-                    reqDate: reqDate
+                    parcelID: parseInt(parcelId) || null
                 })
             });
 
@@ -141,7 +139,7 @@ if (requestForm) {
                 document.getElementById('success-box').style.display = 'block';
                 document.getElementById('success-box').innerHTML = `
                     <h2>REQUEST SUBMITTED</h2>
-                    <p style="margin-bottom: 20px;">Your request for Parcel <strong>${parcelId}</strong> on <strong>${reqDate}</strong> has been submitted to staff.</p>
+                    <p style="margin-bottom: 20px;">Your request for Parcel <strong>${parcelId}</strong> has been submitted to staff.</p>
                     <p style="font-size: 0.9rem; color: #aaa;">Please wait for approval. Further updates will be sent via email.</p>
                     <a href="index.html" class="btn" style="margin-top: 20px;">DONE</a>
                 `;

@@ -58,13 +58,17 @@ class RequestBase(BaseModel):
     requestStatus: str = "Pending"
 
 class RequestCreate(RequestBase):
-    reqDate: Optional[str] = None
+    pass
 
 class RequestResponse(RequestBase):
     requestID: int
     adminID: Optional[int] = None
+    parcelID: Optional[int] = None
     timestamp: datetime
     approvedByAdmin: bool
+    handledBy: Optional[str] = None
+    actionDate: Optional[str] = None
+    actionTime: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -98,9 +102,9 @@ class EmergencyReport(BaseModel):
     name: str
     studentID: str
     lockerID: str
-    reportDate: str
-    reportTime: str
     issue: str
+    reportDate: Optional[str] = None
+    reportTime: Optional[str] = None
 
 class NotifyRequest(BaseModel):
     contact: str

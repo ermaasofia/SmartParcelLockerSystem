@@ -8,8 +8,9 @@
 
 ## 1. Understanding Summary & Decisions
 - **Core Workflow:** Students initiate a request for locker usage via the Student Portal. The Campus Admin reviews and approves/rejects the requests via the Master Admin Dashboard. Upon approval, a parcel and physical locker are assigned.
-- **PIN Generation & Automated Emailing:** The backend auto-generates a single-use 4-digit PIN upon parcel assignment. Using **Nodemailer via SMTP**, the system securely and automatically emails the PIN and locker details directly to the student's registered email.
+- **PIN Generation & Automated Emailing:** The backend auto-generates a single-use 4-digit PIN upon parcel assignment. Using **Nodemailer via SMTP**, the system securely and automatically emails the PIN and locker details directly to the student's registered email. The admin also has the ability to **Regenerate PINs** if a student loses their access code.
 - **Emergency Requests:** Students can log emergency issues (e.g., lost PIN, locker jammed). Admins can view these reports on their dashboard, review the student's details in a dynamic modal, and remotely "Unlock" the physical locker to resolve the issue.
+- **Admin Accountability & Tracking:** The system dynamically tracks the "Staff in Charge" who approved each request, logging their username and timestamp for complete operational transparency.
 - **Late Pickup (72-hour limit):** If a parcel is not picked up within 72 hours, the system auto-flags the parcel with a penalty. The Admin can physically remove the parcel to free up locker space, and the system transitions the status to "Overdue" or "Removed".
 
 ---
@@ -19,11 +20,11 @@
 The system relies on a modern, event-driven, three-tier architecture:
 
 ### A. User Interface Layer (Frontend)
-- **Responsive Web Application:** Built with HTML, JS, and styled with **Tailwind CSS** for modern, responsive layouts.
-- **Student Portal:** Students log in to request lockers, check their parcel status, submit emergency reports, and use the virtual keypad to retrieve parcels via PIN.
-- **Master Admin Dashboard:** A comprehensive command center featuring:
+- **Responsive Web Application:** Built with HTML, JS, and styled with Custom CSS (glassmorphism dark themes) for modern, responsive layouts.
+- **Student Portal:** Students log in to request lockers, check their parcel status, submit emergency reports, and use the virtual keypad to retrieve parcels via PIN. Enhanced with engaging UI animations.
+- **Master Admin Dashboard:** A comprehensive, professional dark-themed command center featuring:
   - **Locker Overview:** Real-time physical status of all lockers.
-  - **Manage Requests/Parcels:** Data tables to approve requests and track parcel life cycles.
+  - **Manage Requests/Parcels:** Streamlined data tables to approve requests, track parcel life cycles, and view Staff in Charge history.
   - **Master Analytics:** A two-tab dashboard showing historical student logs (with instant search filtering) and System Statistics containing KPIs and visual charts (powered by **Chart.js**).
 
 ### B. Application Server & Database Layer (Backend)

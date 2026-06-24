@@ -36,16 +36,43 @@ async function emergencyOpen() {
 
 
 async function unlockLocker(lockerId) {
-    if (!confirm(`Are you sure you want to trigger emergency override to UNLOCK Locker ${lockerId}?`)) return;
+    console.log(`[admin_app.js] unlockLocker() triggered for locker: ${lockerId}`);
+    if (!confirm(`Are you sure you want to forcibly unlock Locker ${lockerId}?`)) return;
+
+    const adminName = localStorage.getItem('adminName') || 'System';
     try {
         const response = await fetch(`${API_BASE}/admin/override/${lockerId}`, {
-            method: 'POST'
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminName: adminName })
         });
         if (response.ok) {
             alert(`EMERGENCY OVERRIDE: Locker ${lockerId} unlocked.`);
             location.reload();
         } else {
             alert("Error: Could not trigger override.");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server connection failed.");
+    }
+}
+
+async function regeneratePin(lockerId) {
+    if (!confirm(`Are you sure you want to regenerate the PIN for Locker ${lockerId} and email the user?`)) return;
+    const adminName = localStorage.getItem('adminName') || 'System';
+    try {
+        const response = await fetch(`${API_BASE}/admin/lockers/${lockerId}/regenerate_pin`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ adminName: adminName })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            alert(`Success! New PIN generated: ${data.newPIN}. An email has been sent to the user.`);
+            location.reload();
+        } else {
+            alert(data.detail || "Error regenerating PIN.");
         }
     } catch (err) {
         console.error(err);
@@ -85,11 +112,12 @@ async function notifyAndRemove(requestId, contactNumber) {
 
 async function updateRequestStatus(requestID, newStatus) {
     console.log(`[admin_app.js] updateRequestStatus() for requestID: ${requestID}, newStatus: ${newStatus}`);
+    const adminName = localStorage.getItem('adminName') || 'System';
     try {
         const response = await fetch(`${API_BASE}/admin/requests/${requestID}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({ status: newStatus, adminName: adminName })
         });
         if (response.ok) {
             alert(`Request updated to ${newStatus}. Locker is now free.`);
@@ -106,11 +134,12 @@ async function updateRequestStatus(requestID, newStatus) {
 
 async function updateParcelStatus(parcelID, newStatus) {
     console.log(`[admin_app.js] updateParcelStatus() for parcelID: ${parcelID}, newStatus: ${newStatus}`);
+    const adminName = localStorage.getItem('adminName') || 'System';
     try {
         const response = await fetch(`${API_BASE}/admin/parcels/${parcelID}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({ status: newStatus, adminName: adminName })
         });
         if (response.ok) {
             alert(`Parcel ${parcelID} status updated to ${newStatus}.`);
@@ -160,12 +189,18 @@ async function loadRequestTable() {
             const statusColor = displayStatus === 'Pending' ? '#FFC107' : displayStatus === 'Approved' ? '#4CAF50' : '#f44336';
             const parcelRef = r.requestedParcelRef || (r.parcelID ? `${r.parcelID}` : '-');
 
+            const staffInCharge = r.handledBy || '—';
+            const dateDisplay = r.actionDate || new Date(r.timestamp).toLocaleDateString();
+            const timeDisplay = r.actionTime || '—';
+
             return `
                 <tr>
+                    <td>${staffInCharge}</td>
                     <td>${r.requestID}</td>
                     <td>${r.studentID}</td>
                     <td>${parcelRef}</td>
-                    <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+                    <td>${dateDisplay}</td>
+                    <td>${timeDisplay}</td>
                     <td><strong>${r.pin || '-'}</strong></td>
                     <td><span style="padding: 4px 8px; border-radius: 4px; color: white; background: ${statusColor}">${displayStatus}</span></td>
                     <td>${actionButtons}</td>
@@ -229,7 +264,8 @@ async function loadParcelTable() {
             } else if (state === 'Emergency') {
                 statusLabel = `<span onclick="viewEmergencyReport('${p.requestID}')" class="text-orange-400 font-bold hover:text-orange-300 hover:underline cursor-pointer transition-colors block text-center" style="color: #ff9f43; cursor: pointer; font-weight: bold;" title="Click to view report">Emergency Requested</span>`;
                 actionButtons = `
-                    <button onclick="unlockLocker('${p.lockerID}')" style="cursor:pointer; background:#ff9f43; color:white; border:none; padding:5px 10px; border-radius:3px;">Unlock</button>
+                    <button onclick="regeneratePin('${p.lockerID}')" style="cursor:pointer; background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:3px; margin-bottom:5px; width: 100%;">Regenerate PIN</button><br>
+                    <button onclick="unlockLocker('${p.lockerID}')" style="cursor:pointer; background:#ff9f43; color:white; border:none; padding:5px 10px; border-radius:3px; width: 100%;">Unlock</button>
                 `;
             } else if (state === 'Collected') {
                 statusLabel = '<span style="color: #888;">Collected</span>';
@@ -244,22 +280,26 @@ async function loadParcelTable() {
                 actionButtons = `<span style="color:#888;">—</span>`;
             }
 
-            const dateDisplay = entryDate ? entryDate.toLocaleDateString() : '-';
-
             // Clean IDs for display
             const displayReqID = String(p.requestID || '').replace(/\D/g, '');
             const displayStudentID = String(p.studentID || '').replace(/\D/g, '');
             const displayParcelID = String(p.parcelID || '').replace(/\D/g, '');
             const displayLockerID = String(p.lockerID || '').replace(/\D/g, '');
 
+            const staffInCharge = p.handledBy || '—';
+            const dateDisplay = p.actionDate || (entryDate ? entryDate.toLocaleDateString() : '-');
+            const timeDisplay = p.actionTime || '—';
+
             return `
                 <tr ${rowClass}>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${staffInCharge}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${displayReqID || '-'}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${displayStudentID}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${displayParcelID}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${displayLockerID}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;"><strong>${p.parcelPIN || '-'}</strong></td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${dateDisplay}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #444;">${timeDisplay}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">${statusLabel}</td>
                     <td style="padding: 10px; border-bottom: 1px solid #444;">
                         ${actionButtons}
@@ -323,11 +363,12 @@ async function approveRequest(requestId, newStatus) {
     if (!rid || isNaN(rid)) {
         return alert("No valid Request ID.");
     }
+    const adminName = localStorage.getItem('adminName') || 'System';
     try {
         const response = await fetch(`${API_BASE}/admin/requests/${rid}/approve`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
+            body: JSON.stringify({ status: newStatus, adminName: adminName })
         });
         if (response.ok) {
             const data = await response.json();

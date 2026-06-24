@@ -4,7 +4,7 @@
     --border: rgba(255, 255, 255, 0.1);
     --accent-color: #c3f400;
     --text-color: #ffffff;
-    --text-secondary: #bdbdbd;
+    --text-secondary: #ffffff;
     --input-text: #ffffff;
     --font-heading: 'Poppins', sans-serif;
     --font-body: 'Poppins', sans-serif;
@@ -24,7 +24,7 @@ body {
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background-image: linear-gradient(90deg, rgba(15, 17, 21, 1) 0%, rgba(15, 17, 21, 0.9) 100%), url("bgLocker5.png");
+    background-image: linear-gradient(90deg, rgba(15, 17, 21, 1) 0%, rgba(15, 17, 21, 0.9) 100%);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -73,7 +73,7 @@ a:hover {
 .form-group label {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    margin-bottom: 30px;
+    margin-bottom: 10px;
     letter-spacing: 0.5px;
 }
 
@@ -293,47 +293,115 @@ input::placeholder {
     font-weight: bold;
 }
 
+
+@keyframes dropParcel {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(100vh);
+    }
+
+    /* Move to the bottom of the screen */
+}
+
 /* Data Tables */
 .data-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
-    background: var(--card);
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
     overflow: hidden;
 }
 
 .data-table th,
 .data-table td {
+    padding: 10px;
     border-bottom: 1px solid var(--border);
-    padding: 15px;
+    color: var(--text-color);
+    border: 1px solid #333;
     text-align: left;
-    font-size: 0.9rem;
 }
 
 .data-table th {
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgb(105, 104, 104);
     text-transform: uppercase;
     font-size: 0.8rem;
-    color: var(--text-secondary);
+    color: var(--text-color);
 }
 
 .data-table tr:hover {
-    background-color: rgba(255, 255, 255, 0.02);
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
 .status-tag {
     padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: bold;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
     text-transform: uppercase;
 }
 
 .status-pending {
-    background-color: #f1c40f;
-    color: #000;
+    background: rgba(241, 196, 15, 0.2);
+    color: #f1c40f;
+    border: 1px solid #f1c40f;
+}
+
+.status-approved {
+    background: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+    border: 1px solid #2ecc71;
+}
+
+.status-rejected {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+
+/* =========================
+   PARCEL ANIMATION
+========================= */
+.parcel-container {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.parcel-animation {
+    position: fixed;
+    top: -200px;
+    font-size: 8rem;
+    pointer-events: none;
+    user-select: none;
+    z-index: -1;
+    /* Behind main content */
+    opacity: 1;
+    animation: fall linear infinite;
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+    }
+
+    100% {
+        transform: translateY(120vh) rotate(360deg);
+    }
+}
+
+.status-active {
+    background-color: #3498db;
+    color: #fff;
 }
 
 .status-stored {
@@ -346,10 +414,6 @@ input::placeholder {
     color: #fff;
 }
 
-.status-active {
-    background-color: #3498db;
-    color: #fff;
-}
 
 /* Modals */
 .modal-overlay {

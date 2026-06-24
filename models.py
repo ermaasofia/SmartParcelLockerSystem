@@ -52,6 +52,9 @@ class Request(Base):
     requestStatus = Column(String, default="Pending")
     timestamp = Column(DateTime, default=func.now())
     approvedByAdmin = Column(Boolean, default=False)
+    handledBy = Column(String, nullable=True)
+    actionDate = Column(String, nullable=True)
+    actionTime = Column(String, nullable=True)
     
     customer = relationship("Customer", back_populates="requests")
     admin = relationship("Admin", back_populates="requests")

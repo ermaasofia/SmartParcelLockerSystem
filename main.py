@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Body, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -160,12 +160,7 @@ def generate_random_pin():
 
 @app.post("/requests/", response_model=schemas.RequestResponse)
 def create_request(req_data: schemas.RequestCreate, db: Session = Depends(get_db)):
-    req_datetime = datetime.utcnow()
-    if req_data.reqDate:
-        try:
-            req_datetime = datetime.strptime(req_data.reqDate, "%Y-%m-%d")
-        except ValueError:
-            pass
+    req_datetime = datetime.now()
 
     # Store as a status-only request; parcelID FK is left null.
     # The user-provided parcel reference is kept in requestedParcelRef.
@@ -269,7 +264,7 @@ async def verify_pin(verify: schemas.PinVerify, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="PIN has already been used or parcel is no longer available.")
         
     # Check expiry (72h limit)
-    if datetime.utcnow() - parcel.storageTime > timedelta(hours=72):
+    if datetime.now() - parcel.storageTime > timedelta(hours=72):
         if not parcel.hasPenalty:
             parcel.hasPenalty = True
             db.commit()
@@ -336,6 +331,9 @@ def list_requests(db: Session = Depends(get_db)):
             "requestStatus": request.requestStatus,
             "timestamp": request.timestamp.isoformat() if request.timestamp else None,
             "approvedByAdmin": request.approvedByAdmin,
+            "handledBy": request.handledBy,
+            "actionDate": request.actionDate,
+            "actionTime": request.actionTime,
             "pin": pin or "-"
         }
         response.append(r_dict)
@@ -344,13 +342,13 @@ def list_requests(db: Session = Depends(get_db)):
 @app.get("/admin/parcels")
 def list_parcels(db: Session = Depends(get_db)):
     # Join Parcel, Request, and Customer to get studentID, phoneNo, and requestStatus
-    results = db.query(models.Parcel, models.Request.studentID, models.Customer.phoneNo, models.Request.requestID, models.Request.requestStatus)\
+    results = db.query(models.Parcel, models.Request.studentID, models.Customer.phoneNo, models.Request.requestID, models.Request.requestStatus, models.Request.handledBy, models.Request.actionDate, models.Request.actionTime)\
                 .outerjoin(models.Request, models.Parcel.parcelID == models.Request.parcelID)\
                 .outerjoin(models.Customer, models.Request.studentID == models.Customer.studentID)\
                 .all()
     
     response = []
-    for parcel, student_id, phone_no, request_id, request_status in results:
+    for parcel, student_id, phone_no, request_id, request_status, handled_by, action_date, action_time in results:
         # Check if overdue and auto-apply penalty
         is_overdue = False
         if parcel.storageTime:
@@ -366,7 +364,7 @@ def list_parcels(db: Session = Depends(get_db)):
                         db.commit()
                     request_status = "Removed"
                 else:
-                    is_overdue = (datetime.utcnow() - parcel.storageTime) > timedelta(hours=72)
+                    is_overdue = (datetime.now() - parcel.storageTime) > timedelta(hours=72)
                     if is_overdue and not parcel.hasPenalty:
                         parcel.hasPenalty = True
                         db.commit()
@@ -384,7 +382,10 @@ def list_parcels(db: Session = Depends(get_db)):
             "studentID": student_id or "Unknown",
             "phoneNo": phone_no or "Unknown",
             "requestID": request_id,
-            "status": request_status or "Available"
+            "status": request_status or "Available",
+            "handledBy": handled_by,
+            "actionDate": action_date,
+            "actionTime": action_time
         }
         response.append(p_dict)
     return response
@@ -451,6 +452,7 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Request not found")
 
     new_status = status_update.get("status")
+    admin_name = status_update.get("adminName")
 
     # Fetch student email
     student_user = db.query(models.User).join(models.Customer).filter(
@@ -508,6 +510,10 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
         send_email_notification(to_email, "Locker Request Declined", body)
 
     request.requestStatus = new_status
+    if admin_name:
+        request.handledBy = admin_name
+        request.actionDate = datetime.now().strftime("%Y-%m-%d")
+        request.actionTime = datetime.now().strftime("%H:%M:%S")
     db.commit()
     
     # Check if all 3 lockers are full and auto-reject others
@@ -538,7 +544,12 @@ def update_request_status(requestID: int, status_update: dict, db: Session = Dep
         raise HTTPException(status_code=404, detail="Request not found")
 
     new_status = status_update.get("status")
+    admin_name = status_update.get("adminName")
     request.requestStatus = new_status
+    if admin_name:
+        request.handledBy = admin_name
+        request.actionDate = datetime.now().strftime("%Y-%m-%d")
+        request.actionTime = datetime.now().strftime("%H:%M:%S")
 
     if new_status in ["Collected", "Removed", "Clear", "Rejected"] and request.parcelID:
         parcel = db.query(models.Parcel).filter(models.Parcel.parcelID == request.parcelID).first()
@@ -559,10 +570,15 @@ def update_parcel_status(parcelID: int, status_update: dict, db: Session = Depen
         raise HTTPException(status_code=404, detail="Parcel not found")
 
     new_status = status_update.get("status")
+    admin_name = status_update.get("adminName")
     # Update ALL requests linked to this parcel (not just the first)
     requests = db.query(models.Request).filter(models.Request.parcelID == parcelID).all()
     for req in requests:
         req.requestStatus = new_status
+        if admin_name:
+            req.handledBy = admin_name
+            req.actionDate = datetime.now().strftime("%Y-%m-%d")
+            req.actionTime = datetime.now().strftime("%H:%M:%S")
 
     if new_status in ["Collected", "Removed", "Clear", "Rejected"]:
         locker = db.query(models.Locker).filter(models.Locker.lockerID == parcel.lockerID).first()
@@ -574,7 +590,7 @@ def update_parcel_status(parcelID: int, status_update: dict, db: Session = Depen
     return {"message": f"Parcel {parcelID} status updated to {new_status}"}
 
 @app.post("/admin/override/{lockerID}")
-async def admin_override(lockerID: int, db: Session = Depends(get_db)):
+async def admin_override(lockerID: int, payload: dict = Body(default={}), db: Session = Depends(get_db)):
     locker = db.query(models.Locker).filter(models.Locker.lockerID == lockerID).first()
     if not locker:
         raise HTTPException(status_code=404, detail="Locker not found")
@@ -590,6 +606,11 @@ async def admin_override(lockerID: int, db: Session = Depends(get_db)):
     
     if request:
         request.requestStatus = "Removed"
+        admin_name = payload.get("adminName")
+        if admin_name:
+            request.handledBy = admin_name
+            request.actionDate = datetime.now().strftime("%Y-%m-%d")
+            request.actionTime = datetime.now().strftime("%H:%M:%S")
         
     locker.lockerStatus = "Available"
     locker.parcelID = None
@@ -597,6 +618,63 @@ async def admin_override(lockerID: int, db: Session = Depends(get_db)):
     
     await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": lockerID, "mode": "EMERGENCY"})
     return {"status": "Override Successful", "locker_id": lockerID}
+
+@app.post("/admin/lockers/{lockerID}/regenerate_pin")
+def regenerate_locker_pin(lockerID: int, payload: dict = Body(default={}), db: Session = Depends(get_db)):
+    # 1. Find locker
+    locker = db.query(models.Locker).filter(models.Locker.lockerID == lockerID).first()
+    if not locker or not locker.parcelID:
+        raise HTTPException(status_code=400, detail="Locker is empty or not found.")
+    
+    # 2. Find Parcel
+    parcel = db.query(models.Parcel).filter(models.Parcel.parcelID == locker.parcelID).first()
+    if not parcel:
+        raise HTTPException(status_code=400, detail="Parcel not found for this locker.")
+        
+    # 3. Generate new PIN and update
+    new_pin = generate_random_pin()
+    parcel.parcelPIN = new_pin
+    db.commit()
+    
+    # 4. Find the student who owns this parcel via the active request
+    request = db.query(models.Request).filter(
+        models.Request.parcelID == parcel.parcelID,
+        models.Request.requestStatus.in_(["Approved", "Stored", "Emergency Requested"])
+    ).first()
+    
+    to_email = "Unknown"
+    if request:
+        # Change status back to Approved so the locker is active again
+        if request.requestStatus == "Emergency Requested":
+            request.requestStatus = "Approved"
+            
+        admin_name = payload.get("adminName")
+        if admin_name:
+            request.handledBy = admin_name
+            request.actionDate = datetime.now().strftime("%Y-%m-%d")
+            request.actionTime = datetime.now().strftime("%H:%M:%S")
+            
+        db.commit()
+            
+        student_user = db.query(models.User).join(models.Customer).filter(
+            models.Customer.studentID == request.studentID
+        ).first()
+        
+        if student_user:
+            to_email = student_user.email
+        else:
+            to_email = f"{request.studentID}@student.edu"
+            
+        body = (
+            f"Hello,\n\nAs per your request, your locker PIN has been regenerated.\n"
+            f"Locker Number: {locker.lockerID}\n"
+            f"Parcel ID: {parcel.parcelID}\n"
+            f"New PIN: {new_pin}\n"
+            f"Please use this new PIN to collect your parcel.\n\nSmart Locker Admin"
+        )
+        send_email_notification(to_email, "Your Locker PIN has been regenerated", body)
+    
+    return {"message": "PIN regenerated successfully", "newPIN": new_pin, "emailSentTo": to_email}
 
 @app.get("/admin/statistics")
 def get_statistics(db: Session = Depends(get_db)):
@@ -709,8 +787,8 @@ def submit_emergency_report(data: schemas.EmergencyReport, db: Session = Depends
         name=data.name,
         studentID=data.studentID,
         lockerID=str(data.lockerID),
-        reportDate=data.reportDate,
-        reportTime=data.reportTime,
+        reportDate=data.reportDate or datetime.now().strftime("%Y-%m-%d"),
+        reportTime=data.reportTime or datetime.now().strftime("%H:%M:%S"),
         issue=data.issue
     )
     db.add(new_report)
