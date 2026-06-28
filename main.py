@@ -178,14 +178,16 @@ def create_request(req_data: schemas.RequestCreate, db: Session = Depends(get_db
     return db_request
 
 def check_and_auto_reject_if_full(db: Session):
-    # Check how many lockers are currently occupied
-    occupied_count = 0
-    for lid in [1, 2, 3]:
-        locker = db.query(models.Locker).filter(models.Locker.lockerID == lid).first()
-        if locker and locker.lockerStatus not in ["Available", "Vacant"] and locker.parcelID is not None:
-            occupied_count += 1
+    total_lockers = db.query(models.Locker).count()
+    if total_lockers == 0:
+        return
+        
+    occupied_count = db.query(models.Locker).filter(
+        ~models.Locker.lockerStatus.in_(["Available", "Vacant"]),
+        models.Locker.parcelID.isnot(None)
+    ).count()
             
-    if occupied_count >= 3:
+    if occupied_count >= total_lockers:
         # Find all other pending/available requests
         pending_requests = db.query(models.Request).filter(
             models.Request.requestStatus.in_(["Available", "Pending"])
@@ -463,16 +465,15 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
     if new_status == "Approved":
         # Only assign a locker if one hasn't been assigned yet
         if not request.parcelID:
-            available_lockers = []
-            for lid in [1, 2, 3]:
-                locker = db.query(models.Locker).filter(models.Locker.lockerID == lid).first()
-                if not locker:
-                    locker = models.Locker(lockerID=lid, lockerStatus="Available")
-                    db.add(locker)
-                    db.commit()
-                    db.refresh(locker)
-                if locker.lockerStatus in ["Available", "Vacant"]:
-                    available_lockers.append(locker)
+            # Seed default lockers if the database is completely empty
+            if db.query(models.Locker).count() == 0:
+                for lid in [1, 2, 3]:
+                    db.add(models.Locker(lockerID=lid, lockerStatus="Available"))
+                db.commit()
+                
+            available_lockers = db.query(models.Locker).filter(
+                models.Locker.lockerStatus.in_(["Available", "Vacant"])
+            ).all()
 
             if not available_lockers:
                 raise HTTPException(status_code=400, detail="All lockers are currently full")
