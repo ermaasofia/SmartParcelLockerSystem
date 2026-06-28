@@ -37,8 +37,4 @@ EXPOSE 8080
 ENV DATABASE_URL="sqlite:////data/pickngo_v2.db"
 ENV PORT=8080
 
-CMD ["gunicorn", "main:app", \
-     "--worker-class", "uvicorn.workers.UvicornWorker", \
-     "--bind", "0.0.0.0:8080", \
-     "--workers", "1", \
-     "--timeout", "120"]
+CMD sh -c "gunicorn main:app --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT:-8080} --workers 1 --timeout 120"

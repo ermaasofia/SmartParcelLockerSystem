@@ -494,18 +494,18 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
             request.approvedByAdmin = True
 
             body = (
-                f"Hello,\n\nGreat news! Your parcel has been approved and stored.\n"
+                f"Hello User,\n\nGreat news!Your parcel has been successfully processed and is now available for collection within our smart locker system.Please refer to the details provided to access your item.  \n\nFor your convenience, the locker information is as follows:\n"
                 f"Locker Number: {assigned_locker.lockerID}\n"
                 f"Parcel ID: {new_parcel.parcelID}\n"
                 f"PIN: {new_parcel.parcelPIN}\n"
-                f"Please collect within 72 hours.\n\nSmart Locker Admin"
+                f"\nKindly ensure that you collect your parcel within the next 72 hours.\n\nSincerely, \nSmart Locker Administration"
             )
             send_email_notification(to_email, "Your Parcel is Ready for Collection!", body)
 
     elif new_status == "Rejected":
         body = (
-            f"Hello,\n\nYour locker request has been declined.\n"
-            f"If this is an error, please contact staff or use the support form.\n\nSmart Locker Admin"
+            f"Hello,\n\nWe regret to inform you that your recent locker request has been declined.\n"
+            f"If this is an error, please contact staff.\n\nSincerely,\nSmart Locker Administrator"
         )
         send_email_notification(to_email, "Locker Request Declined", body)
 
