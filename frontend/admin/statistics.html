@@ -89,6 +89,7 @@
             <div class="flex space-x-6 border-b border-gray-700 mb-8 pb-1">
                 <button class="tab-btn active text-lg" onclick="switchTab('history-tab')">STUDENT HISTORY LOG</button>
                 <button class="tab-btn text-lg" onclick="switchTab('stats-tab')">SYSTEM STATISTICS</button>
+                <button class="tab-btn text-lg" onclick="switchTab('overdue-tab')">OVERDUE RECORDS</button>
             </div>
 
             <!-- TAB 1: HISTORY -->
@@ -136,7 +137,30 @@
                 </table>
             </section>
 
-            <!-- TAB 2: STATISTICS -->
+            <!-- TAB 2: OVERDUE RECORDS -->
+            <section id="overdue-tab" class="tab-content">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-white m-0" style="margin:0;">Overdue & Removed Parcels</h2>
+                </div>
+                
+                <table class="data-table" style="width: 100%; border-collapse: collapse; text-align: left; background: #2a2a2a; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                    <thead style="background: #1f1f1f;">
+                        <tr>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Request ID</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Student ID</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Phone Number</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Locker</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Action Date</th>
+                            <th style="padding: 14px 12px; border-bottom: 1px solid #444; color: #bbb; text-transform: uppercase; font-size: 0.85rem;">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="overdueTableBody">
+                        <tr><td colspan="6" class="text-center p-6 text-gray-400">Loading overdue records...</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- TAB 3: STATISTICS -->
             <section id="stats-tab" class="tab-content">
                 <!-- KPIs -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -258,7 +282,42 @@
                     emTbody.innerHTML = '<tr><td colspan="7" class="text-center p-6 text-gray-400">No emergency reports found.</td></tr>';
                 }
 
-                // 3. Load Statistics & Render Charts
+                // 3. Load Overdue Records
+                const parRes = await fetch(`${API_BASE}/admin/parcels`);
+                const parcelsData = await parRes.json();
+                const overdueTbody = document.getElementById('overdueTableBody');
+                
+                // Filter for parcels that are Removed or are currently overdue (72 hours+)
+                const overdueParcels = parcelsData.filter(p => {
+                    if (p.status === 'Removed') return true;
+                    if (p.actionDate && p.actionTime) {
+                        const storedDate = new Date(`${p.actionDate}T${p.actionTime}`);
+                        const diffHours = (new Date() - storedDate) / (1000 * 60 * 60);
+                        if (diffHours >= 72 && (p.status === 'Approved' || p.status === 'Stored' || p.status === 'Available' || p.status === 'Pending' || !p.status)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+                
+                if (overdueParcels.length > 0) {
+                    overdueTbody.innerHTML = overdueParcels.map(p => `
+                        <tr class="hover:bg-zinc-700 transition-colors border-b border-zinc-700 last:border-0" style="border-bottom: 1px solid #333;">
+                            <td style="padding: 14px 12px; font-family: monospace; font-size: 1.05rem;">${p.requestID || '-'}</td>
+                            <td style="padding: 14px 12px; font-weight: 500;">${p.studentID || '-'}</td>
+                            <td style="padding: 14px 12px;">${p.phoneNo || '-'}</td>
+                            <td style="padding: 14px 12px; font-weight: bold;">L${p.lockerID}</td>
+                            <td style="padding: 14px 12px; color: #aaa;">${p.actionDate} ${p.actionTime}</td>
+                            <td style="padding: 14px 12px; font-weight: bold; color: ${p.status === 'Removed' ? '#f44336' : '#ff9800'};">
+                                ${p.status === 'Removed' ? 'Removed (Penalty)' : 'OVERDUE'}
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    overdueTbody.innerHTML = '<tr><td colspan="6" class="text-center p-6 text-gray-400">No overdue records found.</td></tr>';
+                }
+
+                // 4. Load Statistics & Render Charts
                 const statsRes = await fetch(`${API_BASE}/admin/statistics`);
                 const statsData = await statsRes.json();
                 
