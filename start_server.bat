@@ -21,7 +21,7 @@ if exist ".venv\Scripts\activate.bat" (
     call .venv\Scripts\activate.bat
 )
 
-python main.py
+uv run uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
 echo.
 echo  Server stopped. Press any key to exit.

@@ -83,16 +83,16 @@ async function regeneratePin(lockerId) {
 // Send Notification (Fig 26)
 async function sendNotification(contactNumber) {
     console.log(`[admin_app.js] sendNotification() triggered for contact: ${contactNumber}`);
-    const message = `Hello,\n\nYour parcel is OVERDUE! Please collect it immediately to avoid further penalties.\n\nSmart Locker Admin`;
+    const message = `Hello,\n\nYour parcel is OVERDUE! It has been removed from the locker. Please collect it from the Parcel Management Office during operating hours. A penalty fee of RM5 will be charged.\n\nSincerely,\nSmart Locker Administrator;
     try {
-        const response = await fetch(`${API_BASE}/admin/notify`, {
+        const response = await fetch(`${ API_BASE }/admin/notify`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contact: contactNumber, message: message })
         });
         if (response.ok) {
             const data = await response.json();
-            alert(`Notification sent successfully to ${data.email}.`);
+            alert(`Notification sent successfully to ${ data.email }.`);
         } else {
             alert("Failed to send notification.");
         }
@@ -103,33 +103,33 @@ async function sendNotification(contactNumber) {
 }
 
 async function notifyAndRemove(requestId, contactNumber) {
-    const confirmRemove = confirm(`Are you sure you want to notify and remove request ${requestId}?`);
+    const confirmRemove = confirm(`Are you sure you want to notify and remove request ${ requestId }?`);
     if (!confirmRemove) return;
-    
+
     await sendNotification(contactNumber);
     await updateRequestStatus(requestId, 'Removed');
 }
 
 async function updateRequestStatus(requestID, newStatus) {
-    console.log(`[admin_app.js] updateRequestStatus() for requestID: ${requestID}, newStatus: ${newStatus}`);
+    console.log(`[admin_app.js] updateRequestStatus() for requestID: ${ requestID }, newStatus: ${ newStatus } `);
     const adminName = localStorage.getItem('adminName') || 'System';
     try {
-        const response = await fetch(`${API_BASE}/admin/requests/${requestID}/status`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus, adminName: adminName })
-        });
-        if (response.ok) {
-            alert(`Request updated to ${newStatus}. Locker is now free.`);
-            location.reload();
-        } else {
-            const errData = await response.json();
-            alert(errData.detail || "Error updating status.");
-        }
+        const response = await fetch(`${ API_BASE } /admin/requests / ${ requestID }/status`, {
+    method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: newStatus, adminName: adminName })
+});
+if (response.ok) {
+    alert(`Request updated to ${newStatus}. Locker is now free.`);
+    location.reload();
+} else {
+    const errData = await response.json();
+    alert(errData.detail || "Error updating status.");
+}
     } catch (err) {
-        console.error(err);
-        alert("Network error. Please try again.");
-    }
+    console.error(err);
+    alert("Network error. Please try again.");
+}
 }
 
 async function updateParcelStatus(parcelID, newStatus) {
@@ -170,11 +170,11 @@ async function loadRequestTable() {
 
         tbody.innerHTML = requests.map(r => {
             const status = r.requestStatus;
-            
+
             // Map statuses to Pending, Approved, or Rejected without filtering any requests
-            const displayStatus = (status === 'Pending' || status === 'Available') ? 'Pending' : 
-                                  (status === 'Approved' || status === 'Stored' || status === 'Collected' || status === 'Removed') ? 'Approved' : 'Rejected';
-            
+            const displayStatus = (status === 'Pending' || status === 'Available') ? 'Pending' :
+                (status === 'Approved' || status === 'Stored' || status === 'Collected' || status === 'Removed') ? 'Approved' : 'Rejected';
+
             let actionButtons = "";
 
             if (displayStatus === 'Pending') {
@@ -232,7 +232,7 @@ async function loadParcelTable() {
             const isOverdue = diffHours >= 72;
 
             const isDbActive = p.status === 'Approved' || p.status === 'Stored' || p.status === 'Available' || p.status === 'Pending';
-            
+
             let state = 'Active';
             if (p.status === 'Emergency Requested') {
                 state = 'Emergency';
@@ -449,10 +449,10 @@ async function loadLockerDashboard() {
         const fixedLockers = [1, 2, 3];
         grid.innerHTML = fixedLockers.map(id => {
             const l = lockers.find(locker => locker.lockerID === id) || { lockerStatus: "Available" };
-            
+
             // Source of truth: find any parcel with Approved or Emergency Requested status in this locker
             // This is based on the request status (from /admin/parcels API) which is always correct
-            const activeParcelsInLocker = parcels.filter(p => p.lockerID === id && 
+            const activeParcelsInLocker = parcels.filter(p => p.lockerID === id &&
                 (p.status === 'Approved' || p.status === 'Emergency Requested')
             );
             // Pick the most recent one (highest parcelID)
@@ -550,20 +550,20 @@ async function viewEmergencyReport(requestId) {
         const response = await fetch(`${API_BASE}/admin/emergency_reports/${requestId}`);
         if (response.ok) {
             const data = await response.json();
-            
+
             // Populate Modal Fields
             document.getElementById('modalStudentName').textContent = data.name || '-';
             document.getElementById('modalStudentID').textContent = String(data.studentID || '').replace(/\D/g, '') || '-';
             document.getElementById('modalStudentEmail').textContent = data.email || 'Unknown';
             document.getElementById('modalStudentPhone').textContent = data.phoneNo || 'Unknown';
-            
+
             document.getElementById('modalLockerID').textContent = String(data.lockerID || '').replace(/\D/g, '') || '-';
             document.getElementById('modalSubmittedTime').textContent = `${data.reportDate} ${data.reportTime}`;
             document.getElementById('modalIssueText').textContent = data.issue || 'No reason provided.';
-            
+
             // Show Modal
             const modal = document.getElementById('emergencyModalOverlay');
-            if(modal) {
+            if (modal) {
                 modal.style.display = 'flex';
                 modal.classList.remove('hidden');
             }
@@ -578,7 +578,7 @@ async function viewEmergencyReport(requestId) {
 
 function closeEmergencyModal() {
     const modal = document.getElementById('emergencyModalOverlay');
-    if(modal) {
+    if (modal) {
         modal.style.display = 'none';
         modal.classList.add('hidden');
     }

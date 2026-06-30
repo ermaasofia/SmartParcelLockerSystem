@@ -12,6 +12,7 @@
 - **Emergency Requests:** Students can log emergency issues (e.g., lost PIN, locker jammed). Admins can view these reports on their dashboard, review the student's details in a dynamic modal, and remotely "Unlock" the physical locker to resolve the issue.
 - **Admin Accountability & Tracking:** The system dynamically tracks the "Staff in Charge" who approved each request, logging their username and timestamp for complete operational transparency.
 - **Late Pickup (72-hour limit):** If a parcel is not picked up within 72 hours, the system auto-flags the parcel with a penalty. The Admin can physically remove the parcel to free up locker space, and the system transitions the status to "Overdue" or "Removed".
+- **Dynamic Locker Management:** The system logic dynamically handles locker allocations and states, supporting an arbitrary number of physical lockers without hardcoded limitations.
 
 ---
 
@@ -37,7 +38,11 @@ The system relies on a modern, event-driven, three-tier architecture:
   - `EmergencyReportDB`: Archives all submitted student emergency logs.
 - **Email Microservice:** A Node.js `mailer.js` script interfaces with Google SMTP via `nodemailer` and `dotenv`, triggered securely by the Python backend via subprocesses.
 
-### C. Hardware Control Layer (IoT)
+### C. Deployment & Infrastructure
+- **Containerization:** The backend API and frontend assets are containerized using **Docker** for consistent, reproducible environments.
+- **Cloud Hosting:** The application is configured for deployment on **Fly.io**, providing scalable cloud-native hosting for the FastAPI server.
+
+### D. Hardware Control Layer (IoT)
 - **Communication (WebSockets):** Eliminates polling overhead. Maintains an open bi-directional tunnel between the FastAPI server and the ESP32 for instant remote unlocking.
 - **Hardware Integration:**
   - ESP32 Microcontroller connects to the backend on startup.

@@ -3,11 +3,11 @@
 #include <ArduinoJson.h> // Required for parsing the JSON command
 
 // --- SETTINGS ---
-const char* ssid = "MHBEMR-EXT1";
-const char* password = "Erma@232215";
+const char* ssid ="feeya";
+const char* password ="piaaaaa000";
 
 // --- SERVER SETTINGS ---
-const char* websockets_server = "192.168.68.104"; 
+const char* websockets_server ="172.20.10.3"; 
 const uint16_t port = 8000;
 const char* path = "/ws/esp32/ESP32_MAIN";
 

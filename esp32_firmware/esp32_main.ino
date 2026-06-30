@@ -7,7 +7,7 @@ const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
 // Server configuration
-const char* websocket_server = "192.168.1.XXX"; // REPLACE WITH YOUR LAPTOP/SERVER IP
+const char* websocket_server = "172.20.10.3"; // Your laptop's IP address
 const int websocket_port = 8000;
 const char* websocket_path = "/ws/esp32/ESP32_MAIN";
 
