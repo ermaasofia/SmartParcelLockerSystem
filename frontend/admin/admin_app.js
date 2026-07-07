@@ -83,7 +83,7 @@ async function regeneratePin(lockerId) {
 // Send Notification (Fig 26)
 async function sendNotification(contactNumber) {
     console.log(`[admin_app.js] sendNotification() triggered for contact: ${contactNumber}`);
-    const message = `Hello,\n\nYour parcel is OVERDUE! It has been removed from the locker. Please collect it from the Parcel Management Office during operating hours. A penalty fee of RM5 will be charged.\n\nSincerely,\nSmart Locker Administrator;
+    const message = `Hello,\n\nYour parcel is OVERDUE! It has been removed from the locker. Please collect it from the Parcel Management Office during operating hours. A penalty fee of RM5 will be charged.\n\nSincerely,\nSmart Locker Administrator`;
     try {
         const response = await fetch(`${ API_BASE }/admin/notify`, {
             method: 'POST',
@@ -114,7 +114,7 @@ async function updateRequestStatus(requestID, newStatus) {
     console.log(`[admin_app.js] updateRequestStatus() for requestID: ${ requestID }, newStatus: ${ newStatus } `);
     const adminName = localStorage.getItem('adminName') || 'System';
     try {
-        const response = await fetch(`${ API_BASE } /admin/requests / ${ requestID }/status`, {
+        const response = await fetch(`${API_BASE}/admin/requests/${requestID}/status`, {
     method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: newStatus, adminName: adminName })

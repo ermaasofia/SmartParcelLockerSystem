@@ -258,6 +258,32 @@ if (retrieveForm) {
                 if (retrieveBox && successBox) {
                     retrieveBox.style.display = 'none';
                     successBox.style.display = 'block';
+                    
+                    // Start 20-second visual countdown for relay re-locking
+                    let timeLeft = 20;
+                    const countdownEl = document.getElementById('countdown-number');
+                    if (countdownEl) {
+                        countdownEl.textContent = timeLeft;
+                        const interval = setInterval(() => {
+                            timeLeft--;
+                            if (timeLeft <= 0) {
+                                clearInterval(interval);
+                                countdownEl.textContent = "0";
+                                countdownEl.style.color = "#ff4d4d";
+                                const container = document.querySelector('.countdown-timer-container');
+                                if (container) {
+                                    container.style.border = "1px solid #ff4d4d";
+                                    container.style.background = "rgba(255, 77, 77, 0.08)";
+                                    container.style.boxShadow = "none";
+                                }
+                                const labels = container ? container.querySelectorAll('.countdown-timer-label') : [];
+                                if (labels.length > 0) labels[0].textContent = "Locker has been";
+                                if (labels.length > 1) labels[1].textContent = "re-locked";
+                            } else {
+                                countdownEl.textContent = timeLeft;
+                            }
+                        }, 1000);
+                    }
                 }
             } else {
                 failedAttempts++;

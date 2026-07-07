@@ -1,112 +1,111 @@
 #include <WiFi.h>
-#include <ArduinoWebsockets.h>
-#include <ArduinoJson.h> // Required for parsing the JSON command
+#include <WebSocketsClient.h>
+#include <ArduinoJson.h>
 
-// --- SETTINGS ---
-const char* ssid ="feeya";
-const char* password ="piaaaaa000";
+// WiFi credentials
+const char* ssid = "feeya";
+const char* password = "piaaaaa000";
 
-// --- SERVER SETTINGS ---
-const char* websockets_server ="172.20.10.3"; 
-const uint16_t port = 8000;
-const char* path = "/ws/esp32/ESP32_MAIN";
+// Server configuration
+const char* websocket_server = "pick-n-go.fly.dev"; // Fly.io server host
+const int websocket_port = 443;   
+const char* websocket_path = "/ws/esp32/ESP32_MAIN";
 
-// Define your relay pin here
-const int RELAY_PIN = 26; 
+// Pin definitions - Sila ubah mengikut sambungan fizikal anda
+const int SOLENOID_PIN_1 = 26; 
+const int SOLENOID_PIN_2 = 27;
+const int SOLENOID_PIN_3 = 25; 
 
-using namespace websockets;
-WebsocketsClient client;
+WebSocketsClient webSocket;
 
-// --- JSON MESSAGE HANDLER ---
-void onMessage(WebsocketsMessage message) {
-    String payload = message.data();
-    Serial.println("Received: " + payload);
+// Fungsi untuk membuka locker
+void openLocker(int lockerID) {
+    int pinToTrigger = 0;
     
-    // 1. Create a JSON document
-    StaticJsonDocument<200> doc;
-    
-    // 2. Parse the JSON
-    DeserializationError error = deserializeJson(doc, payload);
-    
-    if (error) {
-        Serial.print("JSON Parse failed: ");
-        Serial.println(error.f_str());
-        return;
+    if (lockerID == 1) pinToTrigger = SOLENOID_PIN_1;
+    else if (lockerID == 2) pinToTrigger = SOLENOID_PIN_2;
+    else if (lockerID == 3) pinToTrigger = SOLENOID_PIN_3;
+
+    if (pinToTrigger != 0) {
+        Serial.printf("Opening Locker %d on pin %d\n", lockerID, pinToTrigger);
+        digitalWrite(pinToTrigger, HIGH); // Jika relay 'Active High'
+        delay(3000); 
+        digitalWrite(pinToTrigger, LOW);
+        Serial.printf("Locker %d closed.\n", lockerID);
     }
+}
+
+// Fungsi untuk mengunci locker (Relay Active High)
+void lockLocker(int lockerID) {
+    int pinToTrigger = 0;
     
-    // 3. Extract values
-    const char* action = doc["action"];
-    int lockerID = doc["lockerID"];
-    
-    // 4. Trigger logic
-    if (String(action) == "OPEN") {
-        Serial.print("Opening Locker ID: ");
-        Serial.println(lockerID);
-        
-        // Trigger relay
-        digitalWrite(RELAY_PIN, HIGH); 
-        delay(3000); // Hold for 3 seconds
-        digitalWrite(RELAY_PIN, LOW);
+    if (lockerID == 1) pinToTrigger = SOLENOID_PIN_1;
+    else if (lockerID == 2) pinToTrigger = SOLENOID_PIN_2;
+    else if (lockerID == 3) pinToTrigger = SOLENOID_PIN_3;
+
+    if (pinToTrigger != 0) {
+        Serial.printf("Locking Locker %d on pin %d\n", lockerID, pinToTrigger);
+        digitalWrite(pinToTrigger, LOW); // LOW to lock (Relay OFF for Active High)
+        Serial.printf("Locker %d locked instantly.\n", lockerID);
+    }
+}
+
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.printf("[WSc] Disconnected!\n");
+            break;
+        case WStype_CONNECTED:
+            Serial.printf("[WSc] Connected to server\n");
+            break;
+        case WStype_TEXT: {
+            Serial.printf("[WSc] Received: %s\n", payload);
+            
+            StaticJsonDocument<200> doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            
+            if (!error) {
+                const char* action = doc["action"];
+                int lockerID = doc["lockerID"];
+                
+                if (strcmp(action, "OPEN") == 0) {
+                    openLocker(lockerID);
+                } else if (strcmp(action, "LOCK") == 0) {
+                    lockLocker(lockerID);
+                }
+            }
+            break;
+        }
+        default: break;
     }
 }
 
 void setup() {
     Serial.begin(115200);
-    pinMode(RELAY_PIN, OUTPUT);
-    digitalWrite(RELAY_PIN, LOW);
-    delay(2000); 
-    Serial.println("\n--- STARTING ---");
-
-    // 1. Force clear old WiFi settings
-    WiFi.disconnect(true);
-    delay(1000);
-    WiFi.mode(WIFI_STA);
     
-    // 2. Begin Connection
+    // Set semua pin sebagai output
+    pinMode(SOLENOID_PIN_1, OUTPUT);
+    pinMode(SOLENOID_PIN_2, OUTPUT);
+    pinMode(SOLENOID_PIN_3, OUTPUT);
+    
+    digitalWrite(SOLENOID_PIN_1, LOW);
+    digitalWrite(SOLENOID_PIN_2, LOW);
+    digitalWrite(SOLENOID_PIN_3, LOW);
+
+    // Sambung ke WiFi
     WiFi.begin(ssid, password);
-    Serial.print("Connecting to WiFi: ");
-    Serial.println(ssid);
-
-    // 3. Monitor Connection
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(1000);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
         Serial.print(".");
-        attempts++;
     }
+    Serial.println("\nWiFi connected!");
 
-    if (WiFi.status() == WL_CONNECTED) {
-        Serial.println("\nWiFi Connected!");
-        Serial.print("IP Address: ");
-        Serial.println(WiFi.localIP());
-    } else {
-        Serial.println("\nWiFi Connection Failed.");
-        return; 
-    }
-
-    // 4. WebSocket Setup
-    client.onMessage(onMessage);
-    client.addHeader("User-Agent", "Arduino/1.0");
-    client.addHeader("Connection", "Upgrade");
-    client.addHeader("Upgrade", "websocket");
-
-    Serial.print("Attempting to connect to: ");
-    Serial.print(websockets_server);
-    Serial.print(":");
-    Serial.println(port);
-
-    bool connected = client.connect(websockets_server, port, path);
-    
-    if(connected) {
-        Serial.println("WebSocket Connected!");
-    } else {
-        Serial.println("Connection Failed!");
-    }
+    // Setup WebSocket
+    webSocket.begin(websocket_server, websocket_port, websocket_path);
+    webSocket.onEvent(webSocketEvent);
+    webSocket.setReconnectInterval(5000);
 }
 
 void loop() {
-    // client.available() checks if connection is alive
-    if(client.available()) {
-        client.poll();
-    }
+    webSocket.loop();
 }

@@ -83,15 +83,23 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket, device_id: str):
         await websocket.accept()
         self.active_connections[device_id] = websocket
+        print(f"[WS] Device {device_id} connected successfully.")
 
     def disconnect(self, device_id: str):
         if device_id in self.active_connections:
             del self.active_connections[device_id]
+            print(f"[WS] Device {device_id} disconnected.")
 
     async def send_command(self, device_id: str, command: dict):
         if device_id in self.active_connections:
-            await self.active_connections[device_id].send_json(command)
-            return True
+            print(f"[WS] Sending command to {device_id}: {command}")
+            try:
+                await self.active_connections[device_id].send_json(command)
+                return True
+            except Exception as e:
+                print(f"[WS] Failed to send command to {device_id}: {e}")
+                return False
+        print(f"[WS] Cannot send command to {device_id}: Device not connected.")
         return False
 
 manager = ConnectionManager()
@@ -272,8 +280,8 @@ async def verify_pin(verify: schemas.PinVerify, db: Session = Depends(get_db)):
             db.commit()
         raise HTTPException(status_code=400, detail="Parcel expired (72h limit). Please see Admin.")
         
-    # Send command to ESP32
-    success = await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": parcel.lockerID})
+    # Send command to ESP32 with a 20-second timer
+    success = await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": parcel.lockerID, "duration": 20000})
     if not success:
         # For testing purposes, we might want to proceed even if hardware is offline
         # But in production, we'd fail here.
@@ -296,10 +304,12 @@ async def verify_pin(verify: schemas.PinVerify, db: Session = Depends(get_db)):
 
 @app.websocket("/ws/esp32/{device_id}")
 async def websocket_endpoint(websocket: WebSocket, device_id: str, db: Session = Depends(get_db)):
+    print(f"[WS] Connection attempt from device_id: {device_id} client: {websocket.client}")
     await manager.connect(websocket, device_id)
     try:
         while True:
             data = await websocket.receive_text()
+            print(f"[WS] Received from {device_id}: {data}")
             try:
                 payload = json.loads(data)
                 if payload.get("action") == "ALARM_TRIGGERED":
@@ -309,9 +319,14 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str, db: Session =
                         if locker:
                             locker.lockerStatus = "Alarm"
                             db.commit()
+                            print(f"[WS] Alarm status updated in DB for locker {lockerID}")
             except json.JSONDecodeError:
-                pass
+                print(f"[WS] Received non-JSON text from {device_id}: {data}")
     except WebSocketDisconnect:
+        print(f"[WS] WebSocket disconnected for device_id: {device_id}")
+        manager.disconnect(device_id)
+    except Exception as e:
+        print(f"[WS] Error in websocket connection for {device_id}: {e}")
         manager.disconnect(device_id)
 
 # Admin Endpoints
@@ -447,7 +462,7 @@ def send_manual_notification(data: schemas.NotifyRequest, db: Session = Depends(
 
 
 @app.put("/admin/requests/{requestID}/approve")
-def approve_request(requestID: int, status_update: dict, db: Session = Depends(get_db)):
+async def approve_request(requestID: int, status_update: dict, db: Session = Depends(get_db)):
     """Primary approval endpoint — looks up by requestID (the true PK)."""
     request = db.query(models.Request).filter(models.Request.requestID == requestID).first()
     if not request:
@@ -529,6 +544,8 @@ def approve_request(requestID: int, status_update: dict, db: Session = Depends(g
         if parcel:
             parcel_pin = parcel.parcelPIN
             locker_id = parcel.lockerID
+            # Send command to ESP32 to lock the locker instantly
+            await manager.send_command("ESP32_MAIN", {"action": "LOCK", "lockerID": locker_id})
         
     return {
         "message": f"Request {requestID} updated to {new_status}",
@@ -617,7 +634,7 @@ async def admin_override(lockerID: int, payload: dict = Body(default={}), db: Se
     locker.parcelID = None
     db.commit()
     
-    await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": lockerID, "mode": "EMERGENCY"})
+    await manager.send_command("ESP32_MAIN", {"action": "OPEN", "lockerID": lockerID, "mode": "EMERGENCY", "duration": 20000})
     return {"status": "Override Successful", "locker_id": lockerID}
 
 @app.post("/admin/lockers/{lockerID}/regenerate_pin")

@@ -539,3 +539,32 @@ input::placeholder {
     filter: grayscale(1);
     background-color: rgba(255, 255, 255, 0.02) !important;
 }
+
+/* Countdown timer styling */
+.countdown-timer-container {
+    background: rgba(195, 244, 0, 0.08);
+    border: 1px dashed var(--accent-color);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.countdown-timer-number {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    line-height: 1;
+    margin: 5px 0;
+    font-family: monospace;
+}
+
+.countdown-timer-label {
+    font-size: 0.85rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
