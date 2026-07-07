@@ -443,10 +443,10 @@ async function loadLockerDashboard() {
         const parcels = await parcelsRes.json();
 
         grid.style.display = "grid";
-        grid.style.gridTemplateColumns = "repeat(3, 1fr)";
+        grid.style.gridTemplateColumns = "repeat(2, 1fr)";
         grid.style.gap = "20px";
 
-        const fixedLockers = [1, 2, 3];
+        const fixedLockers = [1, 2];
         grid.innerHTML = fixedLockers.map(id => {
             const l = lockers.find(locker => locker.lockerID === id) || { lockerStatus: "Available" };
 

@@ -59,6 +59,13 @@ def seed_admins():
             db.refresh(user2)
             db.add(models.Admin(userID=user2.userID))
             db.commit()
+            
+        # Ensure Locker 3 is removed from the database
+        locker3 = db.query(models.Locker).filter(models.Locker.lockerID == 3).first()
+        if locker3:
+            db.delete(locker3)
+            db.commit()
+            print("[CLEANUP] Deleted Locker 3 from database")
     finally:
         db.close()
 
@@ -482,7 +489,7 @@ async def approve_request(requestID: int, status_update: dict, db: Session = Dep
         if not request.parcelID:
             # Seed default lockers if the database is completely empty
             if db.query(models.Locker).count() == 0:
-                for lid in [1, 2, 3]:
+                for lid in [1, 2]:
                     db.add(models.Locker(lockerID=lid, lockerStatus="Available"))
                 db.commit()
                 
@@ -702,8 +709,9 @@ def get_statistics(db: Session = Depends(get_db)):
     total_students = db.query(models.Customer).count()
     total_completed = db.query(models.Request).filter(models.Request.requestStatus == "Collected").count()
     total_emergencies = db.query(models.EmergencyReportDB).count()
+    total_lockers = db.query(models.Locker).count() or 2
     occupied_lockers = db.query(models.Locker).filter(models.Locker.lockerStatus == "Occupied").count()
-    occupancy_rate = f"{int((occupied_lockers / 3) * 100)}%"
+    occupancy_rate = f"{int((occupied_lockers / total_lockers) * 100)}%"
     
     # 1. Most frequently used locker
     locker_counts = db.query(

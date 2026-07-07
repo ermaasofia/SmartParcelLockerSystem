@@ -12,10 +12,9 @@ const char* websocket_server = "pick-n-go.fly.dev"; // Fly.io server host
 const int websocket_port = 443;                     // HTTPS/WSS port
 const char* websocket_path = "/ws/esp32/ESP32_MAIN";
 
-// Definisi Pin GPIO mengikut pendawaian fizikal anda (3 Locker)
+// Definisi Pin GPIO mengikut pendawaian fizikal anda (2 Locker)
 const int SOLENOID_PIN_1 = 26; 
-const int SOLENOID_PIN_2 = 27;
-const int SOLENOID_PIN_3 = 25; 
+const int SOLENOID_PIN_2 = 27; 
 
 WiFiClientSecure secureClient;
 WebSocketsClient webSocket;
@@ -26,7 +25,6 @@ void openLocker(int lockerID, int durationMs = 20000) {
     
     if (lockerID == 1) pinToTrigger = SOLENOID_PIN_1;
     else if (lockerID == 2) pinToTrigger = SOLENOID_PIN_2;
-    else if (lockerID == 3) pinToTrigger = SOLENOID_PIN_3;
 
     if (pinToTrigger != 0) {
         Serial.printf("Command received: Open locker %d on pin %d for %d ms\n", lockerID, pinToTrigger, durationMs);
@@ -49,7 +47,6 @@ void lockLocker(int lockerID) {
     
     if (lockerID == 1) pinToTrigger = SOLENOID_PIN_1;
     else if (lockerID == 2) pinToTrigger = SOLENOID_PIN_2;
-    else if (lockerID == 3) pinToTrigger = SOLENOID_PIN_3;
 
     if (pinToTrigger != 0) {
         Serial.printf("Command received: Lock locker %d on pin %d\n", lockerID, pinToTrigger);
@@ -104,12 +101,10 @@ void setup() {
     // Initialize pins sebagai OUTPUT
     pinMode(SOLENOID_PIN_1, OUTPUT);
     pinMode(SOLENOID_PIN_2, OUTPUT);
-    pinMode(SOLENOID_PIN_3, OUTPUT);
     
     // PENTING: Untuk Active Low, mulakan dengan 'HIGH' supaya kunci sentiasa tertutup semasa 'boot up'
     digitalWrite(SOLENOID_PIN_1, HIGH);
     digitalWrite(SOLENOID_PIN_2, HIGH);
-    digitalWrite(SOLENOID_PIN_3, HIGH);
 
     // Sambung ke WiFi
     Serial.println();

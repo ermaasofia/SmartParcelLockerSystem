@@ -27,12 +27,10 @@ graph TB
         subgraph RELAYS ["Relay Modules (Active Low)"]
             R1["Relay 1<br/>IN ← GPIO 26"]
             R2["Relay 2<br/>IN ← GPIO 27"]
-            R3["Relay 3<br/>IN ← GPIO 25"]
         end
         subgraph LOCKS ["12V Solenoid Locks"]
             L1["🔒 Lock 1<br/>(Locker 1)"]
             L2["🔒 Lock 2<br/>(Locker 2)"]
-            L3["🔒 Lock 3<br/>(Locker 3)"]
         end
         PSU["🔋 12V DC Power Supply<br/>(12V 3A)"]
     end
@@ -41,16 +39,12 @@ graph TB
     WS <-->|"WiFi / WebSocket"| ESP32
     ESP32 -->|"GPIO 26"| R1
     ESP32 -->|"GPIO 27"| R2
-    ESP32 -->|"GPIO 25"| R3
     R1 -->|"12V Switched"| L1
     R2 -->|"12V Switched"| L2
-    R3 -->|"12V Switched"| L3
     PSU -->|"12V+"| R1
     PSU -->|"12V+"| R2
-    PSU -->|"12V+"| R3
     PSU -->|"GND"| L1
     PSU -->|"GND"| L2
-    PSU -->|"GND"| L3
 
     style USER fill:#e8d5f5,stroke:#7c3aed,stroke-width:2px
     style SERVER fill:#dbeafe,stroke:#2563eb,stroke-width:2px
@@ -83,7 +77,6 @@ graph LR
         GND_E["GND Pin"]
         G26["GPIO 26"]
         G27["GPIO 27"]
-        G25["GPIO 25"]
     end
 
     subgraph RELAY1 ["⚡ Relay Module 1"]
@@ -106,23 +99,11 @@ graph LR
         R2_NC["NC (Normally Closed)"]
     end
 
-    subgraph RELAY3 ["⚡ Relay Module 3"]
-        direction TB
-        R3_VCC["VCC"]
-        R3_GND["GND"]
-        R3_IN["IN (Signal)"]
-        R3_COM["COM (Common)"]
-        R3_NO["NO (Normally Open)"]
-        R3_NC["NC (Normally Closed)"]
-    end
-
     subgraph SOL ["🔒 Solenoid Locks (12V)"]
         S1_P["Lock 1 (+)"]
         S1_N["Lock 1 (−)"]
         S2_P["Lock 2 (+)"]
         S2_N["Lock 2 (−)"]
-        S3_P["Lock 3 (+)"]
-        S3_N["Lock 3 (−)"]
     end
 
     subgraph PSU ["🔋 12V DC Power Supply"]
@@ -133,29 +114,22 @@ graph LR
     %% Signal Side Wiring
     G26 -->|"🔵 Blue Wire"| R1_IN
     G27 -->|"🟢 Green Wire"| R2_IN
-    G25 -->|"🟠 Orange Wire"| R3_IN
     V33 -->|"🔴 Red Wire"| R1_VCC
     V33 -->|"🔴 Red Wire"| R2_VCC
-    V33 -->|"🔴 Red Wire"| R3_VCC
     GND_E -->|"⚫ Black Wire"| R1_GND
     GND_E -->|"⚫ Black Wire"| R2_GND
-    GND_E -->|"⚫ Black Wire"| R3_GND
 
     %% Load Side Wiring
     PSU_P -->|"🔴 12V+"| R1_COM
     PSU_P -->|"🔴 12V+"| R2_COM
-    PSU_P -->|"🔴 12V+"| R3_COM
     R1_NO -->|"Wire"| S1_P
     R2_NO -->|"Wire"| S2_P
-    R3_NO -->|"Wire"| S3_P
     S1_N -->|"⚫ GND"| PSU_N
     S2_N -->|"⚫ GND"| PSU_N
-    S3_N -->|"⚫ GND"| PSU_N
 
     style ESP32_DEV fill:#d1fae5,stroke:#059669,stroke-width:2px
     style RELAY1 fill:#fef3c7,stroke:#d97706,stroke-width:2px
     style RELAY2 fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style RELAY3 fill:#fef3c7,stroke:#d97706,stroke-width:2px
     style SOL fill:#fee2e2,stroke:#dc2626,stroke-width:2px
     style PSU fill:#ffedd5,stroke:#ea580c,stroke-width:2px
 ```
@@ -180,7 +154,6 @@ graph TD
     subgraph ESP ["ESP32 Pins"]
         P26["GPIO 26"]
         P27["GPIO 27"]
-        P25["GPIO 25"]
         P33["3.3V"]
         PGND["GND"]
     end
@@ -197,26 +170,16 @@ graph TD
         R2G["GND"]
     end
 
-    subgraph R3 ["Relay 3"]
-        R3I["IN"]
-        R3V["VCC"]
-        R3G["GND"]
-    end
-
     P26 --->|"🔵 Blue"| R1I
     P27 --->|"🟢 Green"| R2I
-    P25 --->|"🟠 Orange"| R3I
     P33 --->|"🔴 Red"| R1V
     P33 --->|"🔴 Red"| R2V
-    P33 --->|"🔴 Red"| R3V
     PGND --->|"⚫ Black"| R1G
     PGND --->|"⚫ Black"| R2G
-    PGND --->|"⚫ Black"| R3G
 
     style ESP fill:#d1fae5,stroke:#059669,stroke-width:2px
     style R1 fill:#fef3c7,stroke:#d97706,stroke-width:2px
     style R2 fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style R3 fill:#fef3c7,stroke:#d97706,stroke-width:2px
 ```
 
 ### Explanation — What Each Wire Does
@@ -225,7 +188,6 @@ graph TD
 |------|------|----|---------|
 | 🔵 Blue | GPIO 26 | Relay 1 IN | **Control signal** for Locker 1. When ESP32 sets this pin LOW, Relay 1 activates and opens Lock 1. |
 | 🟢 Green | GPIO 27 | Relay 2 IN | **Control signal** for Locker 2. Same logic as above. |
-| 🟠 Orange | GPIO 25 | Relay 3 IN | **Control signal** for Locker 3. Same logic as above. |
 | 🔴 Red | 3.3V | All Relay VCC | **Power** for the relay module's logic circuitry (LED indicator + optocoupler). |
 | ⚫ Black | GND | All Relay GND | **Common ground** — completes the circuit between ESP32 and relay modules. Without this, no current flows and nothing works. |
 
@@ -252,35 +214,23 @@ graph TD
         R2NC["NC ❌ Not Used"]
     end
 
-    subgraph R3 ["Relay 3 Output"]
-        R3C["COM"]
-        R3NO["NO"]
-        R3NC["NC ❌ Not Used"]
-    end
-
     subgraph LOCKS ["🔒 Solenoid Locks"]
         L1P["Lock 1 (+)"]
         L1N["Lock 1 (−)"]
         L2P["Lock 2 (+)"]
         L2N["Lock 2 (−)"]
-        L3P["Lock 3 (+)"]
-        L3N["Lock 3 (−)"]
     end
 
     PLUS -->|"🔴 Red"| R1C
     PLUS -->|"🔴 Red"| R2C
-    PLUS -->|"🔴 Red"| R3C
     R1NO -->|"Wire"| L1P
     R2NO -->|"Wire"| L2P
-    R3NO -->|"Wire"| L3P
     L1N -->|"⚫ Black"| MINUS
     L2N -->|"⚫ Black"| MINUS
-    L3N -->|"⚫ Black"| MINUS
 
     style PSU fill:#ffedd5,stroke:#ea580c,stroke-width:2px
     style R1 fill:#fef3c7,stroke:#d97706,stroke-width:2px
     style R2 fill:#fef3c7,stroke:#d97706,stroke-width:2px
-    style R3 fill:#fef3c7,stroke:#d97706,stroke-width:2px
     style LOCKS fill:#fee2e2,stroke:#dc2626,stroke-width:2px
 ```
 
@@ -304,7 +254,7 @@ Every relay module has **3 output terminals**:
 stateDiagram-v2
     [*] --> LOCKED: ESP32 boots up
     LOCKED --> UNLOCKED: GPIO goes LOW<br/>(relay triggers)
-    UNLOCKED --> LOCKED: GPIO goes HIGH<br/>(after 3 seconds)
+    UNLOCKED --> LOCKED: GPIO goes HIGH<br/>(after 20 seconds)
     
     note right of LOCKED
         GPIO = HIGH (3.3V)
@@ -338,11 +288,10 @@ This seems backwards, but it's because of how the relay module's **optocoupler**
 // At boot: Set all pins HIGH = all relays OFF = all locks CLOSED
 digitalWrite(SOLENOID_PIN_1, HIGH);  // Lock 1 → LOCKED
 digitalWrite(SOLENOID_PIN_2, HIGH);  // Lock 2 → LOCKED
-digitalWrite(SOLENOID_PIN_3, HIGH);  // Lock 3 → LOCKED
 
 // To open a lock: Set pin LOW = relay ON = lock OPENS
 digitalWrite(pinToTrigger, LOW);     // Relay triggers → Lock OPENS
-delay(3000);                         // Wait 3 seconds
+delay(20000);                        // Wait 20 seconds
 digitalWrite(pinToTrigger, HIGH);    // Relay releases → Lock CLOSES
 ```
 
@@ -369,7 +318,7 @@ sequenceDiagram
         E->>R: 6. digitalWrite(GPIO26, LOW)
         R->>L: 7. NO connects to COM → 12V flows
         Note over L: 🔓 Lock OPENS
-        Note over E: ⏱️ delay(3000) — 3 seconds
+        Note over E: ⏱️ delay(20000) — 20 seconds
         E->>R: 8. digitalWrite(GPIO26, HIGH)
         R->>L: 9. NO disconnects → 12V stops
         Note over L: 🔒 Lock CLOSES
@@ -387,10 +336,10 @@ sequenceDiagram
 2. **Server validates** — The FastAPI backend checks the OTP and reservation status in the SQLite database.
 3. **WebSocket command sent** — If valid, the server sends a JSON message through the persistent WebSocket connection to the ESP32.
 4. **ESP32 receives JSON** — The ESP32 parses the JSON using ArduinoJson library and extracts the `action` and `lockerID`.
-5. **GPIO pin identified** — Based on `lockerID`, the firmware maps to the correct pin (1→GPIO26, 2→GPIO27, 3→GPIO25).
+5. **GPIO pin identified** — Based on `lockerID`, the firmware maps to the correct pin (1→GPIO26, 2→GPIO27).
 6. **Relay triggered** — The GPIO pin is set LOW, which activates the Active-Low relay.
 7. **Lock opens** — The relay's internal switch connects COM to NO, completing the 12V circuit to the solenoid, which retracts the lock bolt.
-8. **3-second delay** — The firmware waits 3000ms to give the user time to open the locker door.
+8. **20-second delay** — The firmware waits 20000ms to give the user time to open the locker door.
 9. **Lock closes** — GPIO goes HIGH, relay deactivates, 12V circuit breaks, solenoid spring pushes the bolt back into locked position.
 
 ---
@@ -400,7 +349,6 @@ sequenceDiagram
 ```mermaid
 graph LR
     subgraph ESP32 ["ESP32 GPIO Pins"]
-        G25["GPIO 25 🟠"]
         G26["GPIO 26 🔵"]
         G27["GPIO 27 🟢"]
         V33["3.3V 🔴"]
@@ -410,7 +358,6 @@ graph LR
     subgraph FUNC ["Function"]
         F1["Locker 1 Control"]
         F2["Locker 2 Control"]
-        F3["Locker 3 Control"]
         FV["Relay Power"]
         FG["Common Ground"]
     end
@@ -418,14 +365,12 @@ graph LR
     subgraph TARGET ["Connected To"]
         T1["Relay 1 IN"]
         T2["Relay 2 IN"]
-        T3["Relay 3 IN"]
         TV["All Relay VCC"]
         TG["All Relay GND"]
     end
 
     G26 --> F1 --> T1
     G27 --> F2 --> T2
-    G25 --> F3 --> T3
     V33 --> FV --> TV
     GND --> FG --> TG
 
@@ -452,7 +397,7 @@ graph TD
 
     subgraph HIGH ["High Voltage Circuit (12V)"]
         RC["Relay Contacts<br/>(COM/NO terminals)"]
-        SOL["Solenoid Locks<br/>(x3)"]
+        SOL["Solenoid Locks<br/>(x2)"]
     end
 
     USB -->|"5V via USB"| ESP
@@ -493,7 +438,7 @@ graph TD
            GPIO 35 ───┤                  ├─── GPIO 21
            GPIO 32 ───┤                  ├─── GPIO 19
            GPIO 33 ───┤                  ├─── GPIO 18
-    ★ ──── GPIO 25 ───┤  (Locker 3)     ├─── GPIO 05
+           GPIO 25 ───┤                  ├─── GPIO 05
     ★ ──── GPIO 26 ───┤  (Locker 1)     ├─── GPIO 17
     ★ ──── GPIO 27 ───┤  (Locker 2)     ├─── GPIO 16
            GPIO 14 ───┤                  ├─── GPIO 04
@@ -513,17 +458,17 @@ graph TD
 | # | Component | Qty | Specification | Est. Price (MYR) |
 |---|-----------|-----|---------------|------------------|
 | 1 | ESP32 DevKit V1 (30-pin) | 1 | Dual-core 240MHz, WiFi + BLE | ~RM 25 |
-| 2 | Relay Module (Active Low) | 3 | 1-Channel, 3.3V compatible, optocoupler isolated | ~RM 5 each |
-| 3 | 12V Solenoid Lock | 3 | DC 12V electric cabinet lock, fail-secure | ~RM 15 each |
+| 2 | Relay Module (Active Low) | 2 | 1-Channel, 3.3V compatible, optocoupler isolated | ~RM 5 each |
+| 3 | 12V Solenoid Lock | 2 | DC 12V electric cabinet lock, fail-secure | ~RM 15 each |
 | 4 | 12V DC Power Supply | 1 | 12V 3A minimum, barrel jack or screw terminal | ~RM 20 |
 | 5 | Breadboard | 1 | Full-size 830 holes | ~RM 8 |
-| 6 | Jumper Wires | ~20 | Male-to-Male & Male-to-Female assorted colors | ~RM 8 |
+| 6 | Jumper Wires | ~15 | Male-to-Male & Male-to-Female assorted colors | ~RM 8 |
 | 7 | Micro-USB Cable | 1 | For ESP32 programming & power | ~RM 5 |
 | 8 | *(Optional)* Buck Converter | 1 | 12V → 5V step-down module | ~RM 6 |
 
-**Estimated Total: ~RM 107**
+**Estimated Total: ~RM 77**
 
-> **💡 TIP:** Buy a single **3-channel relay module** instead of 3 separate 1-channel modules. It has all 3 relays on one board, simplifying wiring. They work identically — just share VCC and GND.
+> **💡 TIP:** Buy a single **2-channel relay module** instead of 2 separate 1-channel modules. It has both relays on one board, simplifying wiring. They work identically — just share VCC and GND.
 
 ---
 
@@ -531,21 +476,19 @@ graph TD
 
 ### Step 1 — Prepare the Breadboard
 1. Place the **ESP32 DevKit** in the center of the breadboard, straddling the center gap.
-2. Place the 3 relay modules next to the breadboard (they're usually too large to fit on the breadboard).
+2. Place the 2 relay modules next to the breadboard (they're usually too large to fit on the breadboard).
 
 ### Step 2 — Wire the Signal Side (Low Voltage)
 1. 🔵 **Blue wire:** ESP32 **GPIO 26** → Relay 1 **IN**
 2. 🟢 **Green wire:** ESP32 **GPIO 27** → Relay 2 **IN**
-3. 🟠 **Orange wire:** ESP32 **GPIO 25** → Relay 3 **IN**
-4. 🔴 **Red wire:** ESP32 **3.3V** → Relay 1 **VCC** → Relay 2 **VCC** → Relay 3 **VCC** (daisy-chain)
-5. ⚫ **Black wire:** ESP32 **GND** → Relay 1 **GND** → Relay 2 **GND** → Relay 3 **GND** (daisy-chain)
+3. 🔴 **Red wire:** ESP32 **3.3V** → Relay 1 **VCC** → Relay 2 **VCC** (daisy-chain)
+4. ⚫ **Black wire:** ESP32 **GND** → Relay 1 **GND** → Relay 2 **GND** (daisy-chain)
 
 ### Step 3 — Wire the Load Side (12V)
-1. 🔴 Connect **12V PSU (+)** → **COM** on Relay 1, Relay 2, and Relay 3
+1. 🔴 Connect **12V PSU (+)** → **COM** on Relay 1 and Relay 2
 2. Connect Relay 1 **NO** → Solenoid Lock 1 **(+)** terminal
 3. Connect Relay 2 **NO** → Solenoid Lock 2 **(+)** terminal
-4. Connect Relay 3 **NO** → Solenoid Lock 3 **(+)** terminal
-5. ⚫ Connect all Solenoid Lock **(−)** terminals → **12V PSU GND**
+4. ⚫ Connect all Solenoid Lock **(−)** terminals → **12V PSU GND**
 
 ### Step 4 — Upload Firmware
 1. Connect ESP32 to laptop via Micro-USB.
@@ -577,13 +520,13 @@ graph TD
 ## 12. Pre-Flight Checklist
 
 - [ ] ESP32 connected to laptop via USB
-- [ ] All 3 relay module LEDs are on (indicating VCC power)
+- [ ] Both relay module LEDs are on (indicating VCC power)
 - [ ] 12V power supply plugged in and switched ON
 - [ ] WiFi SSID is broadcasting and ESP32 connects
 - [ ] FastAPI server is running (`python main.py` or `start_server.bat`)
 - [ ] Serial Monitor shows `WiFi connected` + WebSocket `Connected`
 - [ ] Test: Send `{"action":"OPEN","lockerID":1}` — Relay 1 clicks and Lock 1 opens for 20 seconds
-- [ ] Repeat test for Locker 2 and Locker 3
+- [ ] Repeat test for Locker 2
 - [ ] All locks re-lock automatically after 20 seconds
 
 ---
@@ -649,7 +592,7 @@ Understanding how to control power to each part of the system is essential for s
   - For software-initiated resets, you can perform a soft reboot in firmware via `ESP.restart()`.
 
 ### B. Relay Modules
-- **Control Signal:** Controlled by ESP32 GPIO pins (`GPIO 26`, `GPIO 27`, `GPIO 25`).
+- **Control Signal:** Controlled by ESP32 GPIO pins (`GPIO 26`, `GPIO 27`).
 - **Method to Turn On/Off:**
   - Because these are **Active-Low** relays, writing `LOW` to the control pin triggers the relay coil (ON state, closed circuit).
   - Writing `HIGH` turns off the relay coil (OFF state, open circuit).
